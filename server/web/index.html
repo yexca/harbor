@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="A quiet start page for your self-hosted services.">
+  <title>Harbor — Start page</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M7 17 17 7M7 7h10v10"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="m14 5 5 5M4 20l5-1L20 8a2 2 0 0 0-5-5L4 14v6Z"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3Z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 14A9 9 0 0 1 10 3.5 9 9 0 1 0 20.5 14Z"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="m10 13 4-4m-6 6-2 2a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0m4 2 2-2a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0" transform="translate(1 0)"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="m9.5 3-.6 2.2-2 .9-2-.6L2.5 10l1.6 1.6v2.1l-1.6 1.5L5 19.5l2.1-.6 1.8 1 .6 2.1h5l.6-2.1 1.8-1 2.1.6 2.5-4.3-1.6-1.5v-2.1L21.5 10 19 5.5l-2 .6-2-.9-.5-2.2h-5Z" transform="translate(0 -1) scale(1 .95)"/><circle cx="12" cy="11.5" r="3"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  </svg>
+
+  <div class="wallpaper" aria-hidden="true"></div>
+  <div class="wallpaper-shade" aria-hidden="true"></div>
+  <button id="settings-button" class="settings-trigger" type="button" aria-label="Settings" title="Settings" aria-haspopup="dialog"><svg class="icon"><use href="#i-settings"/></svg></button>
+
+  <main class="home-screen" aria-label="Home">
+    <section class="clock-section" aria-label="Time and date">
+      <h1 class="sr-only">Harbor</h1>
+      <time id="clock" class="clock" aria-label="Current time">00:00</time>
+      <p id="date" class="date"></p>
+    </section>
+    <section class="home-apps" aria-label="Home apps">
+      <div id="load-error" class="notice" role="alert" hidden><p>Could not load your apps.</p><button id="retry-button" class="button button-secondary" type="button">Try again</button></div>
+      <div id="loading" class="loading-state" role="status"><span class="spinner"></span>Loading…</div>
+      <div id="home-grid" class="home-grid"></div>
+      <p id="empty-home" class="empty-home" hidden>Choose your home apps in Settings.</p>
+    </section>
+  </main>
+
+  <button id="open-apps" class="apps-trigger" type="button" aria-label="Open all apps" aria-haspopup="dialog"><svg class="icon"><use href="#i-grid"/></svg><span class="desktop-hint">Right-click for all apps</span><span class="touch-hint">All apps</span></button>
+
+  <dialog id="apps-dialog" class="apps-dialog" aria-labelledby="apps-title">
+    <div class="dialog-header"><div class="panel-title"><h2 id="apps-title">All apps</h2><span id="service-count" class="count-badge">0</span></div><button class="icon-button" type="button" data-close="apps-dialog" aria-label="Close all apps"><svg class="icon"><use href="#i-close"/></svg></button></div>
+    <div class="apps-body">
+      <label class="search-box"><svg class="icon"><use href="#i-search"/></svg><input id="search" type="search" placeholder="Find an app" aria-label="Find an app" autocomplete="off"><kbd>Esc</kbd></label>
+      <p id="library-empty" class="library-empty" hidden>Your collection starts here.</p>
+      <div id="service-grid" class="library-grid"></div>
+      <div id="no-results" class="no-results" hidden><p>No matching apps.</p><button id="clear-search" class="text-button" type="button">Clear search</button></div>
+    </div>
+    <div class="apps-footer"><span id="library-hint">Choose which apps appear on your home screen.</span><span>harbor.</span></div>
+  </dialog>
+
+  <dialog id="settings-dialog" class="settings-dialog" aria-labelledby="settings-title">
+    <div class="dialog-header"><h2 id="settings-title">Settings</h2><button class="icon-button" type="button" data-close="settings-dialog" aria-label="Close settings"><svg class="icon"><use href="#i-close"/></svg></button></div>
+    <div class="settings-body">
+      <section class="settings-section" aria-labelledby="apps-settings-title"><h3 id="apps-settings-title">Your apps</h3><div class="settings-group">
+        <button id="manage-apps" class="settings-row" type="button"><span class="setting-symbol"><svg class="icon"><use href="#i-grid"/></svg></span><span class="row-label">All apps<span id="home-count" class="row-detail">Choose what stays on home</span></span><svg class="icon chevron"><use href="#i-chevron"/></svg></button>
+        <button id="add-button" class="settings-row" type="button" disabled><span class="setting-symbol"><svg class="icon"><use href="#i-plus"/></svg></span><span class="row-label">Add a service</span><svg class="icon chevron"><use href="#i-chevron"/></svg></button>
+      </div></section>
+
+      <section class="settings-section" aria-labelledby="appearance-title"><h3 id="appearance-title">Appearance</h3>
+        <div class="segmented" role="group" aria-label="Panel appearance"><button type="button" data-theme-choice="system" aria-pressed="true">System</button><button type="button" data-theme-choice="light" aria-pressed="false">Light</button><button type="button" data-theme-choice="dark" aria-pressed="false">Dark</button></div>
+        <fieldset class="wallpaper-choices"><legend>Background</legend><div><button type="button" data-wallpaper-choice="mountain" aria-label="Mountain background" aria-pressed="true"><span class="wallpaper-swatch mountain"></span><span>Mountain</span></button><button type="button" data-wallpaper-choice="dusk" aria-label="Dusk background" aria-pressed="false"><span class="wallpaper-swatch dusk"></span><span>Dusk</span></button><button type="button" data-wallpaper-choice="midnight" aria-label="Midnight background" aria-pressed="false"><span class="wallpaper-swatch midnight"></span><span>Midnight</span></button></div></fieldset>
+        <label class="settings-toggle"><span>24-hour clock</span><input id="clock-format" class="switch" type="checkbox" checked></label>
+      </section>
+      <button id="access-button" class="button button-secondary access-button" type="button" hidden><svg class="icon"><use href="#i-lock"/></svg><span>Unlock editing</span></button>
+      <p class="settings-note">Right-click the page or press <kbd>/</kbd> for all apps. Background and appearance are saved on this device.</p>
+    </div>
+  </dialog>
+
+  <dialog id="service-dialog" aria-labelledby="dialog-title">
+    <form id="service-form">
+      <div class="dialog-header"><h2 id="dialog-title">Add a service</h2><button class="icon-button" type="button" data-close="service-dialog" aria-label="Close editor"><svg class="icon"><use href="#i-close"/></svg></button></div>
+      <div class="dialog-body">
+        <label class="field">Name <input id="service-name" name="name" required maxlength="80" placeholder="e.g. Emby" autocomplete="off"></label>
+        <label class="field">Address <input id="service-url" name="url" required maxlength="2048" placeholder="http://media.example:8096" inputmode="url" autocomplete="url" spellcheck="false"><span class="field-hint">Use the full address you open in your browser.</span></label>
+        <label class="field">Description <span class="optional">optional</span><input id="service-description" name="description" maxlength="160" placeholder="e.g. Movies, shows, and a quiet evening" autocomplete="off"></label>
+        <label class="settings-toggle home-toggle"><span>Show on home<span class="row-detail">Keep this app on your start page.</span></span><input id="service-on-home" class="switch" type="checkbox" checked></label>
+
+        <div class="icon-field"><div class="field-heading"><span>Service icon</span><button id="reset-icon" class="text-button" type="button" hidden>Use initials</button></div><div class="icon-editor"><div id="icon-preview" class="service-icon icon-preview" aria-label="Icon preview">H</div><div class="icon-controls"><div class="icon-actions"><button id="fetch-icon" class="button button-secondary button-small" type="button"><svg class="icon"><use href="#i-spark"/></svg>Auto-fetch</button><button id="upload-icon" class="button button-secondary button-small" type="button"><svg class="icon"><use href="#i-upload"/></svg>Upload</button></div><p id="icon-status" class="field-hint" role="status">An icon will be fetched when you enter an address.</p></div></div><input id="icon-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/x-icon,image/vnd.microsoft.icon,image/svg+xml,.ico" hidden></div>
+        <details id="icon-link-details"><summary>Use an image URL</summary><div class="image-url-row"><input id="icon-url" type="url" aria-label="Icon image URL" placeholder="https://example.com/icon.png" maxlength="2048"><button id="fetch-direct-icon" class="button button-secondary button-small" type="button">Fetch</button></div></details>
+        <p id="form-error" class="form-error" role="alert" hidden></p>
+      </div>
+      <div class="dialog-footer"><button id="delete-button" class="button button-danger-quiet" type="button" hidden><svg class="icon"><use href="#i-trash"/></svg>Delete</button><div class="footer-buttons"><button class="button button-secondary" type="button" data-close="service-dialog">Cancel</button><button id="save-button" class="button button-primary" type="submit">Add service</button></div></div>
+    </form>
+  </dialog>
+
+  <dialog id="delete-dialog" class="small-dialog" aria-labelledby="delete-title"><form id="delete-form"><div class="dialog-header"><h2 id="delete-title">Delete this service?</h2><button class="icon-button" type="button" data-close="delete-dialog" aria-label="Cancel deletion"><svg class="icon"><use href="#i-close"/></svg></button></div><div class="dialog-body"><p id="delete-description" class="dialog-description"></p><p id="delete-error" class="form-error" role="alert" hidden></p></div><div class="dialog-footer footer-end"><button class="button button-secondary" type="button" data-close="delete-dialog" autofocus>Keep service</button><button id="confirm-delete" class="button button-danger" type="submit">Delete service</button></div></form></dialog>
+
+  <dialog id="login-dialog" class="small-dialog" aria-labelledby="login-title"><form id="login-form"><div class="dialog-header"><h2 id="login-title">Unlock editing</h2><button class="icon-button" type="button" data-close="login-dialog" aria-label="Close sign-in"><svg class="icon"><use href="#i-close"/></svg></button></div><div class="dialog-body"><p class="dialog-description">Enter your administrator password to manage services.</p><label class="field">Password<input id="password" type="password" autocomplete="current-password" required maxlength="1024"></label><p id="login-error" class="form-error" role="alert" hidden></p></div><div class="dialog-footer footer-end"><button class="button button-secondary" type="button" data-close="login-dialog">Cancel</button><button id="login-submit" class="button button-primary" type="submit">Unlock</button></div></form></dialog>
+  <div id="toast" class="toast" role="status" hidden><svg class="icon"><use href="#i-check"/></svg><span></span></div>
+</body>
+</html>

@@ -1,0 +1,12 @@
+[
+  {
+    "url": "https://intro.limestart.page/",
+    "files": ["ASSETS.md", "scripts/privacy-allowlist.json"],
+    "reason": "Public design reference and original asset attribution; not a runtime request."
+  },
+  {
+    "url": "http://www.w3.org/2000/svg",
+    "files": ["server/web/index.html", "server/web/app.js", "server/web/favicon.svg", "server/main_test.go", "scripts/privacy-allowlist.json"],
+    "reason": "Standard SVG XML namespace, not a fetched service destination."
+  }
+]
