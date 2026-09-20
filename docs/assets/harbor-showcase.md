@@ -1,0 +1,10 @@
+# README showcase
+
+`harbor-showcase.png` is an illustrative product preview generated with the
+built-in OpenAI image generation tool. The service names and descriptions are
+fictional. The All apps inset is a presentation composition, not a depiction of
+the exact dialog placement. No user collection or private endpoints were used.
+
+## Generation prompt
+
+Use case: ui-mockup. Asset type: wide 16:9 GitHub README showcase illustration for Harbor, a lightweight self-hosted NAS start page. Create a polished, realistic interface illustration, edge-to-edge with subtly rounded outer corners. Background is a serene photographic alpine lake at blue hour, layered slate-blue mountain ridges, pale blue-gray sky and restrained peach horizon. The main desktop interface has very generous negative space, a large thin white clock reading '09:41' centered above the date 'Monday, September 21'. Below it are six rounded frosted glass service cards arranged in three columns and two rows, each with a simple colored rounded-square initial icon, white service name and small description. Exact names and descriptions: 'Media' / 'Movies and shows'; 'Music' / 'Your audio library'; 'Books' / 'Read something new'; 'Photos' / 'Favorite moments'; 'Files' / 'Everything in one place'; 'Downloads' / 'Ready when you are'. Use initials M M B P F D, no third-party logos. Settings gear alone in top-right corner, subtle bottom-center grid launcher labeled 'All apps'. At lower right, a smaller floating frosted glass inset panel titled 'All apps', showing three small service tiles and a final '+' tile, with a search field 'Find an app'. Keep inset clear of the six home cards. This inset represents the separate management panel, as a showcase composition. Minimal system sans-serif typography, calm iOS-inspired glass, legible typography, coherent precise alignment. No browser chrome, no sidebar, no health indicators, no analytics, no addresses or URLs, no marketing copy, no additional features. The result must feel like a quiet start page, not a monitoring dashboard.

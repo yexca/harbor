@@ -4,6 +4,12 @@ A lightweight, self-hosted start page for your NAS services. A full-screen
 background, clock/date, and frosted glass cards keep home quiet. Service
 management stays in All apps and Settings.
 
+<p align="center">
+  <img src="docs/assets/harbor-showcase.png" width="1200" alt="Harbor interface illustration with a mountain background, clock, service cards, and an All apps panel">
+</p>
+
+*Illustrative preview with fictional services; the exact interface may differ.*
+
 Harbor uses **Go's standard library and plain HTML, CSS, and JavaScript**.
 It runs as one executable with embedded local assets. There are no third-party
 Go modules, frontend build tools, database servers, CDNs, or runtime Node.js

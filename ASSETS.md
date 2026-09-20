@@ -13,6 +13,11 @@ Generation prompt:
 
 ## Other visuals
 
+- `docs/assets/harbor-showcase.png` is a README illustration created with the
+  built-in OpenAI image generation tool. It depicts fictional services and a
+  composed All apps inset, rather than an exact application screenshot.
+  The generation prompt is recorded in [the showcase notes](docs/assets/harbor-showcase.md).
+
 - Dusk and Midnight backgrounds are CSS gradients.
 - Interface symbols and `server/web/favicon.svg` are simple project-native SVG graphics.
 - Uploaded or fetched service icons belong to their respective owners and are stored in the user's configuration.
