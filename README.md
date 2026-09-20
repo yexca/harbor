@@ -26,7 +26,8 @@ current scope.
 
 ## Quick Start
 
-Requires Docker with Compose support. From the project directory:
+Requires Docker with Compose support. From the project directory, Compose
+automatically loads [docker-compose.yml](docker-compose.yml):
 
 ```sh
 docker compose up -d --build

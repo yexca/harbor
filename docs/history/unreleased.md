@@ -1,1 +1,3 @@
-No changes recorded since v0.1.0.
+## Deployment
+
+- Rename the default Compose configuration to `docker-compose.yml`.

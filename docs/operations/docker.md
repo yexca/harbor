@@ -11,7 +11,8 @@ Open `http://localhost:7750` on the host, or substitute its reachable hostname/I
 on another device. Set the port and optional editing password through
 [configuration](configuration.md).
 
-The Compose file builds `harbor:local` from source; this name is not a published
+The root [docker-compose.yml](../../docker-compose.yml) builds `harbor:local`
+from source; this name is not a published
 registry image. Docker performs the Go build, so the host needs neither Go nor
 Node.js. The production image contains one executable and CA certificates on
 Alpine, and runs as UID/GID `10001:10001`.

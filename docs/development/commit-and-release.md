@@ -80,3 +80,13 @@ it does not create GitHub Release notes or upload standalone executables.
 
 A local build or version file is not evidence of a published release. Confirm
 the Actions run and both registry manifests after an authorized tag push.
+
+After successful image publication, publish the GitHub Release separately using
+the existing tag and its archived release notes. For example, with GitHub CLI:
+
+```sh
+gh release create v0.1.0 --verify-tag --title v0.1.0 --notes-file docs/history/v0.1.0.md --latest
+```
+
+Use the version being released in each argument. Do not move an existing release
+tag to include later changes.
