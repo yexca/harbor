@@ -3,7 +3,7 @@ services:
     build: .
     image: harbor:local
     ports:
-      - "${HARBOR_PORT:-8080}:8080"
+      - "${HARBOR_PORT:-7750}:7750"
     environment:
       HARBOR_ADMIN_PASSWORD: "${HARBOR_ADMIN_PASSWORD:-}"
     volumes:

@@ -32,7 +32,7 @@ Requires Docker with Compose support. From the project directory:
 docker compose up -d --build
 ```
 
-Open `http://localhost:8080` on the host, or its reachable address on another
+Open `http://localhost:7750` on the host, or its reachable address on another
 device. Use the top-right **Settings → Add a service**, or right-click and select
 the final **+** tile in **All apps**.
 
@@ -40,7 +40,7 @@ To change the port or protect editing, copy [.env.example](.env.example) to
 `.env`, set the values, and recreate the service:
 
 ```dotenv
-HARBOR_PORT=8080
+HARBOR_PORT=7750
 HARBOR_ADMIN_PASSWORD=replace-with-your-password
 ```
 

@@ -7,7 +7,7 @@ docker compose up -d --build
 docker compose ps
 ```
 
-Open `http://localhost:8080` on the host, or substitute its reachable hostname/IP
+Open `http://localhost:7750` on the host, or substitute its reachable hostname/IP
 on another device. Set the port and optional editing password through
 [configuration](configuration.md).
 
@@ -26,7 +26,7 @@ the installation.
 ```sh
 docker build -t harbor:local .
 docker run -d --name harbor \
-  -p 8080:8080 \
+  -p 7750:7750 \
   -v harbor-data:/data \
   -e HARBOR_ADMIN_PASSWORD=replace-with-your-password \
   --read-only --cap-drop ALL --security-opt no-new-privileges:true \

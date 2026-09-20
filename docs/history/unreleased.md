@@ -15,6 +15,7 @@
 - Store services and icons in an atomic JSON snapshot with legacy visibility compatibility.
 - Support optional editing protection and bounded icon requests.
 - Package a non-root Docker runtime with persistent `/data` storage.
+- Use port 7750 by default for the server, container, and Compose host binding.
 
 ## Repository and development
 

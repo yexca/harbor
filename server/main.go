@@ -36,7 +36,7 @@ type application struct {
 }
 
 func main() {
-	addr := env("HARBOR_ADDR", ":8080")
+	addr := env("HARBOR_ADDR", ":7750")
 	if len(os.Args) == 2 && os.Args[1] == "healthcheck" {
 		if strings.HasPrefix(addr, ":") {
 			addr = "127.0.0.1" + addr

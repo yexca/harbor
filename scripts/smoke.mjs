@@ -41,7 +41,7 @@ async function request(path, method = "GET", body) {
 }
 
 function resolveAddress() {
-  const binding = command(["port", name, "8080/tcp"]);
+  const binding = command(["port", name, "7750/tcp"]);
   assert.match(binding, /^127\.0\.0\.1:\d+$/);
   baseURL = `http://${binding}`;
 }
@@ -67,7 +67,7 @@ async function login() {
 }
 
 try {
-  command(["run", "-d", "--name", name, "--pull=never", "-p", "127.0.0.1::8080", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true", "-e", `HARBOR_ADMIN_PASSWORD=${password}`, image]);
+  command(["run", "-d", "--name", name, "--pull=never", "-p", "127.0.0.1::7750", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true", "-e", `HARBOR_ADMIN_PASSWORD=${password}`, image]);
   resolveAddress();
   await ready();
   phase = "health check and embedded assets";

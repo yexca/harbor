@@ -14,8 +14,8 @@ RUN apk add --no-cache ca-certificates \
     && mkdir /data && chown harbor:harbor /data
 COPY --from=build /harbor /harbor
 USER harbor:harbor
-ENV HARBOR_ADDR=:8080 HARBOR_DATA_DIR=/data
-EXPOSE 8080
+ENV HARBOR_ADDR=:7750 HARBOR_DATA_DIR=/data
+EXPOSE 7750
 VOLUME ["/data"]
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD ["/harbor", "healthcheck"]

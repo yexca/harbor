@@ -3,7 +3,7 @@
 ## First Launch
 
 Start Harbor using the [Docker guide](../operations/docker.md), then open
-`http://localhost:8080` on the host or the host's reachable address on your device.
+`http://localhost:7750` on the host or the host's reachable address on your device.
 The first launch has an empty collection.
 
 Open the top-right **Settings** button and select **Add a service**. Alternatively,

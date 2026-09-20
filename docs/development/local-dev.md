@@ -19,7 +19,7 @@ make build
 ```
 
 Run these commands from the repository root, one at a time; the server stays
-in the foreground until stopped. The local URL is `http://localhost:8080` and
+in the foreground until stopped. The local URL is `http://localhost:7750` and
 data defaults to `./data` relative to the working directory.
 `make build` writes `bin/harbor` (`bin/harbor.exe` on Windows). Restart after web
 asset changes because Go embeds assets at compilation.
