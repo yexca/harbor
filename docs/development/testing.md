@@ -37,6 +37,15 @@ For UI changes, run `make web-check`, start an isolated preview, and exercise th
 affected flow in a browser. Verify home/All apps visibility, add/edit/delete,
 failed icon fetches, Settings preferences, keyboard dismissal, focus, and narrow
 viewport scrolling as relevant. Syntax checking alone does not verify these flows.
+For motion changes, also check rapid open/close, switching between Settings,
+All apps and the editor, nested delete cancellation, and reduced motion. Search
+must keep the home cards intact and retain the final add tile. Check both themes
+and a narrow touch viewport; blur should remain confined to glass surfaces.
+In the service editor, focus and refocus Name, including an 80-character value,
+at narrow widths and short viewport heights. Only the form body should scroll
+vertically; the header and actions remain visible, with no horizontal scrollbar.
+Close the editor after scrolling down and reopen it: Name should be visible at
+the top without shifting the page sideways.
 
 ## Docker Smoke Isolation
 

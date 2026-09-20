@@ -40,6 +40,13 @@ current direction and constrain future UI changes.
 - Reflow cards on small screens without horizontal page overflow. Keep a useful
   two-column home grid on ordinary phones.
 - Respect reduced-motion preferences and avoid continuous decorative animation.
+- Use short, interruptible transform/opacity transitions for glass surfaces,
+  with a softer entrance and a quicker exit. Keep blur radii and shadows static
+  during motion; frost individual surfaces instead of the full-screen backdrop.
+- Reuse unchanged service cards during filtering and updates so icons and focus
+  remain stable. Searching All apps must not rebuild the home grid.
+- Provide opaque glass fallbacks when backdrop filtering is unavailable or the
+  browser requests reduced transparency.
 - Use system fonts, local assets, and CSS variables for shared appearance roles.
   Do not introduce external font or icon requests for decoration.
 

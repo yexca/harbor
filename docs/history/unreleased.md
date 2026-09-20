@@ -4,6 +4,10 @@
 - Provide All apps through right-click, Settings, keyboard shortcut, and a bottom launcher.
 - Add service editing, icon fetching/uploads, search, and shared home selection.
 - Keep appearance and clock preferences in each browser.
+- Refine glass surfaces, panel opening/closing motion, and control feedback while
+  reusing unchanged cards during search and collection updates.
+- Keep editor actions visible while fields scroll, and prevent initial Name focus
+  from moving the page or creating horizontal scrolling.
 
 ## Runtime and data
 

@@ -157,20 +157,41 @@ function serviceCard(item, home = false) {
   return article;
 }
 
-function render() {
+// Keep unchanged cards (and their decoded icons/focus) across collection updates.
+const cardViews = new WeakMap();
+function renderCards(grid, items, home = false) {
+  const previous = cardViews.get(grid) || new Map();
+  const next = new Map();
+  let cursor = grid.firstElementChild;
+  for (const item of items) {
+    const canEdit = !home && state.canEdit;
+    const pending = !home && state.visibilityPending.has(item.id);
+    let view = previous.get(item.id);
+    if (!view || view.item !== item || view.canEdit !== canEdit) {
+      const element = serviceCard(item, home);
+      if (view) view.element.replaceWith(element);
+      if (cursor === view?.element) cursor = element;
+      view = { item, canEdit, element };
+    }
+    for (const button of view.element.querySelectorAll("button")) button.disabled = pending;
+    if (view.element !== cursor) grid.insertBefore(view.element, cursor);
+    cursor = view.element.nextElementSibling;
+    next.set(item.id, view);
+  }
+  for (const [id, view] of previous) if (!next.has(id)) view.element.remove();
+  cardViews.set(grid, next);
+}
+
+function renderLibrary() {
   const query = $("#search").value.trim().toLowerCase();
   const filtered = state.services.filter((item) => `${item.name} ${item.description} ${item.url}`.toLowerCase().includes(query));
   const grid = $("#service-grid");
-  grid.replaceChildren(...filtered.map((item) => serviceCard(item)));
-  const home = state.services.filter((item) => !item.hidden);
-  $("#home-grid").replaceChildren(...home.map((item) => serviceCard(item, true)));
+  renderCards(grid, filtered);
   $("#service-count").textContent = state.services.length;
-  $("#home-count").textContent = `${home.length} of ${state.services.length} on home`;
-  $("#empty-home").hidden = !state.loaded || home.length > 0;
   $("#library-empty").hidden = !state.loaded || state.services.length > 0;
   $("#library-hint").textContent = state.canEdit ? "Choose which apps appear on your home screen." : "Unlock editing in Settings to organize your apps.";
   $("#no-results").hidden = !state.loaded || !state.services.length || filtered.length > 0;
-  if (state.loaded) {
+  if (state.loaded && !grid.querySelector(".add-card")) {
     const add = document.createElement("button");
     add.type = "button";
     add.className = "add-card";
@@ -185,6 +206,14 @@ function render() {
   }
 }
 
+function render() {
+  renderLibrary();
+  const home = state.services.filter((item) => !item.hidden);
+  renderCards($("#home-grid"), home, true);
+  $("#home-count").textContent = `${home.length} of ${state.services.length} on home`;
+  $("#empty-home").hidden = !state.loaded || home.length > 0;
+}
+
 function closeNavigationPanels() {
   $("#settings-dialog").close();
   $("#apps-dialog").close();
@@ -192,14 +221,19 @@ function closeNavigationPanels() {
 
 function openLibrary(focusSearch = false) {
   if ($("#service-dialog").open || $("#login-dialog").open || $("#delete-dialog").open) return;
+  if ($("#apps-dialog").open) {
+    if (focusSearch) $("#search").focus();
+    return;
+  }
   closeNavigationPanels();
   $("#search").value = "";
-  render();
+  renderLibrary();
   $("#apps-dialog").showModal();
   if (focusSearch) $("#search").focus();
 }
 
 function openSettings() {
+  if ($("#settings-dialog").open) return;
   closeNavigationPanels();
   $("#settings-dialog").showModal();
   $("#settings-button").setAttribute("aria-expanded", "true");
@@ -293,7 +327,8 @@ function openEditor(item = null) {
   showError("#form-error", "");
   updatePreview();
   $("#service-dialog").showModal();
-  $("#service-name").focus();
+  $("#service-dialog .dialog-body").scrollTop = 0;
+  $("#service-name").focus({ preventScroll: true });
 }
 
 function updatePreview() {
@@ -353,8 +388,8 @@ $("#open-apps").addEventListener("click", () => openLibrary());
 $("#manage-apps").addEventListener("click", () => openLibrary());
 $("#settings-dialog").addEventListener("close", () => $("#settings-button").setAttribute("aria-expanded", "false"));
 $("#retry-button").addEventListener("click", load);
-$("#search").addEventListener("input", render);
-$("#clear-search").addEventListener("click", () => { $("#search").value = ""; render(); $("#search").focus(); });
+$("#search").addEventListener("input", renderLibrary);
+$("#clear-search").addEventListener("click", () => { $("#search").value = ""; renderLibrary(); $("#search").focus(); });
 $("#service-name").addEventListener("input", updatePreview);
 $("#service-url").addEventListener("blur", () => fetchIcon(false, true));
 $("#service-url").addEventListener("input", () => { if (state.iconController) { cancelIconRequest(); state.lastIconURL = ""; $("#icon-status").textContent = "Address changed. Leave the field to fetch its icon."; } });

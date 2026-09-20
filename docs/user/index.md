@@ -56,5 +56,11 @@ expire after 24 hours or a server restart. **Lock editing** ends the session.
 
 Dismiss panels with Escape, the close button, or an outside click. Saving prevents
 accidental dismissal; form errors keep the entered values available for correction.
+In the service editor, the fields scroll while the title and save/cancel buttons
+remain visible. Opening the editor starts at Name without scrolling the page.
+Panels use short opening and closing transitions, and appearance choices have a
+sliding selection indicator. System reduced-motion settings disable these effects.
+Browsers that support reduced transparency use opaque surfaces when requested;
+older browsers may dismiss panels immediately instead of animating their exit.
 
 For problems, see [troubleshooting](../operations/troubleshooting.md).
