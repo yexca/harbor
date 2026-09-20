@@ -53,6 +53,8 @@ cards. Without a password, everyone can also edit it. Use a trusted network or
 reverse-proxy access control and HTTPS as appropriate for your deployment.
 
 Compose builds `harbor:local` from source; it is not a published registry image.
+The [release workflow](docs/development/commit-and-release.md) can publish versioned
+AMD64/ARM64 images to GHCR and Docker Hub after the repository is configured.
 The container runs unprivileged with a read-only root filesystem and persistent
 `/data`. Keep backups of `services.json`; `docker compose down` preserves the
 volume, while `docker compose down -v` deletes it.

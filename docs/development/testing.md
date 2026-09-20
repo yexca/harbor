@@ -13,15 +13,16 @@ the smallest target that covers the change.
 | `make backend-check` | Formatting, vet, and Go tests |
 | `make web-check` | Browser JavaScript syntax; not a browser integration test |
 | `make docs-check` | Existence and containment of local Markdown link targets |
-| `make scripts-test` | Repository checker behavior, including staged/private data cases |
+| `make scripts-test` | Repository privacy/link checks and release tag, registry, and output validation |
 | `make sensitive-check` | Index and non-ignored working files, including prospective untracked files |
 | `make ci-local` | Backend, web, docs, checker tests, and a compiled local build |
 | `make docker-build` | Build the production image as `harbor:check` by default |
 | `make docker-smoke` | Build and exercise an isolated production container |
 | `make ci` | `ci-local`, race testing, and Docker smoke; the Linux Actions sequence |
 
-GitHub Actions invokes `make ci` and `make sensitive-check` on `main` pushes and
-pull requests. Local validation does not imply that a remote CI run has occurred.
+GitHub Actions invokes `make ci` and `make sensitive-check` on `main` pushes,
+pull requests, manual CI runs, and version tags through the reusable release
+validation job. Local validation does not imply that a remote CI run has occurred.
 There is no frontend package installation or production bundling step.
 
 ## Coverage and Browser Checks
@@ -74,6 +75,11 @@ Public references belong in [the exact URL allowlist](../../scripts/privacy-allo
 with owner files and a reason. It never suppresses credential/path findings.
 Use reserved example domains or documentation IP ranges for ordinary fixtures;
 literal prohibited addresses are appropriate only when testing address rejection.
+
+Release script tests use synthetic registry names and temporary output files;
+they never log in or push an image. Validate workflow syntax with `actionlint`
+when editing `.github/workflows/`. Real registry authentication and multi-registry
+publication require a configured GitHub Actions release run.
 
 This is a heuristic and can miss secrets or flag intentional examples. Review
 the actual staged diff and every allowlist change before committing. Ignoring a

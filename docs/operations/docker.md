@@ -62,5 +62,7 @@ locally, for example:
 docker buildx build --platform linux/arm64 -t harbor:arm64 --load .
 ```
 
-Publishing a multi-platform image requires a registry destination and explicit
-release setup; this repository does not publish images automatically.
+Version tags can publish multi-platform images to GHCR and Docker Hub after CI
+passes. Configure the registry variables and credentials using the
+[release guide](../development/commit-and-release.md). The default Compose file
+continues to build locally; use a registry image only after its release run succeeds.

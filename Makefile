@@ -47,7 +47,7 @@ docs-check:
 	$(NODE) scripts/check.mjs docs
 
 scripts-test:
-	$(NODE) --test scripts/check.test.mjs
+	$(NODE) --test scripts/check.test.mjs scripts/release.test.mjs
 
 sensitive-check:
 	$(NODE) scripts/check.mjs sensitive
