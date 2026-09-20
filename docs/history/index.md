@@ -1,6 +1,7 @@
 # History
 
 - [Unreleased](unreleased.md)
+- [v0.1.1](v0.1.1.md)
 - [v0.1.0](v0.1.0.md)
 
 Store future release bodies as `docs/history/<tag>.md` and link them here.
