@@ -73,7 +73,7 @@ Use temporary directories and isolated containers; never test against saved NAS 
 - Record durable decisions in `docs/decisions/`; release summaries in `docs/history/`.
 - [VERSION](VERSION) is release metadata; JSON schema version is independent.
   Version tags trigger validated Docker publishing; see the release guide for
-  required registry variables and secrets. Do not push tags without release authorization.
+  fixed registry destinations and required secret. Do not push tags without release authorization.
 - Use English Conventional Commit messages, for example
   `fix(icons): preserve the previous icon after a failed fetch`.
 - Respect configured commit signing. Do not disable signing, replace a signer,

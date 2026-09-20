@@ -15,11 +15,11 @@ export function releaseMetadata({ refType, tag, version, repository, username, i
     throw new Error("GITHUB_REPOSITORY must identify the source owner/repository.");
   }
   if (!matches(/^[a-z\d][a-z\d_-]*$/, username)) {
-    throw new Error("Set the DOCKERHUB_USERNAME repository variable to the Docker Hub login name.");
+    throw new Error("The workflow must provide a valid Docker Hub login name in DOCKERHUB_USERNAME.");
   }
   const component = "[a-z\\d]+(?:(?:[._]|__|-+)[a-z\\d]+)*";
   if (!matches(new RegExp(`^${component}/${component}$`), image) || image.length > 255) {
-    throw new Error("Set the DOCKERHUB_IMAGE repository variable to lowercase namespace/image, without a registry or tag.");
+    throw new Error("The workflow must provide DOCKERHUB_IMAGE as lowercase namespace/image, without a registry or tag.");
   }
   const ghcr = `ghcr.io/${repository.toLowerCase()}`;
   const registries = [ghcr, `docker.io/${image}`];

@@ -43,20 +43,21 @@ smoke tests) and `make sensitive-check`, with read-only repository permissions.
 
 `release.yml` runs on pushed `v*` tags. Preparation requires a stable
 `v<major>.<minor>.<patch>` tag exactly matching `VERSION`; malformed tags,
-prereleases, and missing registry variables fail before publishing. The same
+prereleases, and invalid registry configuration fail before publishing. The same
 tagged source must pass the reusable CI workflow before registry login and build.
 Third-party actions are pinned to commit SHAs.
 
-Configure these in **Settings → Secrets and variables → Actions**:
+Docker Hub settings are fixed in the workflow: login username `yexca` and image
+`yexca/harbor`. No repository variables are needed. Configure the following in
+**Settings → Secrets and variables → Actions → Secrets**:
 
 | Kind | Name | Value |
 | --- | --- | --- |
-| Repository variable | `DOCKERHUB_USERNAME` | Docker Hub login username |
-| Repository variable | `DOCKERHUB_IMAGE` | Lowercase `namespace/image`, for example `example/harbor`; no registry, tag, or digest |
-| Repository secret | `DOCKERHUB_TOKEN` | Docker Hub access token with permission to push to that image repository |
+| Repository secret | `DOCKERHUB_TOKEN` | Docker Hub access token for `yexca` with permission to push to `yexca/harbor` |
 
-The image namespace can be an organization different from the login username.
-Create the Docker Hub repository and grant the token access before the first tag.
+Create the `yexca/harbor` Docker Hub repository and grant the token access before
+the first tag. To publish a fork to a different Docker Hub account, edit the two
+constants in the workflow's `env` block.
 Keep the token in **Secrets**, not a plaintext Actions variable or source file.
 
 GHCR uses the automatic `GITHUB_TOKEN` with `packages: write` only in the publish

@@ -7,6 +7,10 @@ on:
 permissions:
   contents: read
 
+env:
+  DOCKERHUB_USERNAME: yexca
+  DOCKERHUB_IMAGE: yexca/harbor
+
 # Serialize releases so two runs cannot update registry tags at the same time.
 concurrency:
   group: release-images
@@ -30,9 +34,6 @@ jobs:
           node-version-file: .nvmrc
       - name: Validate version and registry configuration
         id: metadata
-        env:
-          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
-          DOCKERHUB_IMAGE: ${{ vars.DOCKERHUB_IMAGE }}
         run: node scripts/release.mjs
 
   validate:
@@ -70,7 +71,7 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
-          username: ${{ vars.DOCKERHUB_USERNAME }}
+          username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4

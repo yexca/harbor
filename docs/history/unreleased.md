@@ -26,4 +26,4 @@
 - Group application code and embedded browser assets under `server/`, keeping
   the Go module and deployment/development entry points at the repository root.
 - Reuse full CI before version-tag releases and publish AMD64/ARM64 Docker images
-  to GHCR and Docker Hub using configured repository variables and secrets.
+  to GHCR and `yexca/harbor` on Docker Hub using the `DOCKERHUB_TOKEN` secret.
