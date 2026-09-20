@@ -1,6 +1,7 @@
 services:
   harbor:
-    image: yexca/harbor:latest
+    build: .
+    image: harbor:local
     ports:
       - "${HARBOR_PORT:-7750}:7750"
     environment:

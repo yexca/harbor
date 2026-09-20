@@ -105,9 +105,9 @@ function run(command) {
   make ci-local             All portable checks and local build
   make ci                   Portable checks, race test, Docker smoke
   make docker-smoke         Build and test an isolated container
-  make docker-up/down       Start/stop Compose (preserves volumes)
-  make docker-status/logs   Inspect Compose
-Overrides: GO, NODE, DOCKER, GO_PARALLEL, DOCKER_IMAGE, COMPOSE_PROJECT`);
+  make docker-up/down       Build/start or stop development Compose (preserves data)
+  make docker-status/logs   Inspect development Compose
+Overrides: GO, NODE, DOCKER, GO_PARALLEL, DOCKER_IMAGE, COMPOSE_FILE, COMPOSE_PROJECT`);
     return;
   }
   const files = repositoryFiles();

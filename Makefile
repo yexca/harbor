@@ -5,8 +5,9 @@ NODE ?= node
 DOCKER ?= docker
 GO_PARALLEL ?= 2
 DOCKER_IMAGE ?= harbor:check
-COMPOSE_PROJECT ?= harbor
-COMPOSE = $(DOCKER) compose -p $(COMPOSE_PROJECT)
+COMPOSE_PROJECT ?= harbor-dev
+COMPOSE_FILE ?= docker-compose.dev.yml
+COMPOSE = $(DOCKER) compose -f $(COMPOSE_FILE) -p $(COMPOSE_PROJECT)
 
 ifeq ($(OS),Windows_NT)
 EXE := .exe

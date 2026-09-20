@@ -41,6 +41,26 @@ HARBOR_ADDR=127.0.0.1:18481 HARBOR_DATA_DIR=./.tmp/dev-data go run ./server
 Use a dedicated terminal for preview environment variables. The server does not
 load `.env`; that file is for Compose interpolation.
 
+## Docker Development
+
+Build and start a source checkout with the standalone development Compose file.
+First create `data` in the checkout; on Linux, grant ownership to the container
+user with `sudo chown 10001:10001 data`:
+
+```sh
+docker compose -f docker-compose.dev.yml -p harbor-dev up -d --build
+docker compose -f docker-compose.dev.yml -p harbor-dev logs --tail=100
+docker compose -f docker-compose.dev.yml -p harbor-dev down
+```
+
+It builds `harbor:local` and bind-mounts the checkout's `./data` at `/data`.
+Keep production deployments in a separate directory: both Compose files use
+`./data`, and different project names do not isolate that directory.
+Re-run the build command after source changes;
+there is no live reload. `down` preserves development data. Set `HARBOR_PORT`
+in `.env` to another port if a production instance already uses port 7750.
+The default `docker-compose.yml` pulls the published Docker Hub image instead.
+
 ## Repository Workflow
 
 The root `go.mod` defines one module. `server/` contains the Go application and
@@ -56,8 +76,10 @@ Recipes use direct commands without POSIX-only shell pipelines, so GNU Make can
 run them on Windows. Override `GO`, `NODE`, `DOCKER`, `GO_PARALLEL`, or
 `DOCKER_IMAGE` as needed. Go checks/builds default to two parallel packages.
 
-`make docker-up` uses Compose project `harbor`; use `COMPOSE_PROJECT` to target
-another installation. `make docker-down` preserves its volumes. The smoke target
+`make docker-up` builds with `docker-compose.dev.yml` and Compose project
+`harbor-dev`; the down/status/logs targets use the same configuration. Override
+`COMPOSE_FILE` and `COMPOSE_PROJECT` to target another configuration or project.
+`make docker-down` preserves the host data directory. The smoke target
 uses its own random container name, loopback port, and anonymous volume.
 
 See [contributing](../../CONTRIBUTING.md), [architecture](../architecture/index.md),

@@ -3,7 +3,7 @@
 | Symptom | Check |
 | --- | --- |
 | Harbor will not start | Read `docker compose logs --tail=100`; check JSON validity, permissions, and port conflicts. |
-| Saved services disappear after recreation | Confirm the same Compose project and volume/bind mount are being used. Different project names create different named volumes. |
+| Saved services disappear after recreation | Confirm the same host data directory is mounted at `/data`. Moving the Compose file changes the relative `./data` path; switching from a named volume requires copying the saved file first. |
 | A card is absent from home | Open All apps and enable Show on home. Hidden cards remain searchable there. |
 | Changes cannot be saved | Unlock editing, check free space, the 500-service limit, and UID 10001 write access to `/data`. |
 | Auto-fetch fails | Check NAS reachability, login requirements, certificate trust, icon format/size, and the destination restrictions. Upload a PNG as a fallback. |

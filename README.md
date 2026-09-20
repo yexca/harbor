@@ -26,19 +26,26 @@ current scope.
 
 ## Quick Start
 
-Requires Docker with Compose support. From the project directory, Compose
-automatically loads [docker-compose.yml](docker-compose.yml):
+Requires Docker with Compose support. Copy [docker-compose.yml](docker-compose.yml)
+into an empty directory and run from there; no source checkout or build is needed:
+
+On Linux/NAS hosts, prepare the data directory for the container user first:
 
 ```sh
-docker compose up -d --build
+mkdir -p data
+sudo chown 10001:10001 data
+```
+
+```sh
+docker compose up -d
 ```
 
 Open `http://localhost:7750` on the host, or its reachable address on another
 device. Use the top-right **Settings → Add a service**, or right-click and select
 the final **+** tile in **All apps**.
 
-To change the port or protect editing, copy [.env.example](.env.example) to
-`.env`, set the values, and recreate the service:
+To change the port or protect editing, create a `.env` file beside the Compose
+file (or copy [.env.example](.env.example)), set the values, and recreate the service:
 
 ```dotenv
 HARBOR_PORT=7750
@@ -53,12 +60,11 @@ Anyone who can reach Harbor can view the entire collection, including hidden
 cards. Without a password, everyone can also edit it. Use a trusted network or
 reverse-proxy access control and HTTPS as appropriate for your deployment.
 
-Compose builds `harbor:local` from source; it is not a published registry image.
-The [release workflow](docs/development/commit-and-release.md) can publish versioned
-AMD64/ARM64 images to GHCR and Docker Hub after the repository is configured.
+Compose pulls `yexca/harbor:latest` from Docker Hub, with AMD64/ARM64 support.
+For a fixed release, change the image tag to `yexca/harbor:v0.1.0`.
 The container runs unprivileged with a read-only root filesystem and persistent
-`/data`. Keep backups of `services.json`; `docker compose down` preserves the
-volume, while `docker compose down -v` deletes it.
+`/data`, bind-mounted from `./data` beside the Compose file. Keep backups of
+`data/services.json`; `docker compose down`, including `-v`, preserves this directory.
 
 See [Docker deployment](docs/operations/docker.md),
 [configuration](docs/operations/configuration.md), and
@@ -76,6 +82,17 @@ See [Docker deployment](docs/operations/docker.md),
 - [Asset provenance](ASSETS.md), [decisions](docs/decisions/index.md), and [history](docs/history/index.md).
 
 ## Development
+
+To build and run from a source checkout using Docker:
+
+```sh
+docker compose -f docker-compose.dev.yml -p harbor-dev up -d --build
+```
+
+The development configuration uses `harbor:local` and the checkout's `./data`
+directory. Prepare its permissions as above and rebuild after source changes.
+Run production and development from separate directories so they do not share
+saved data. See [local development](docs/development/local-dev.md).
 
 Go 1.26 or later is enough to run Harbor locally:
 
