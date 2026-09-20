@@ -1,7 +1,7 @@
 # Security Policy
 
 Harbor is a personal NAS start page. The current development branch receives
-fixes; no tagged release has been published by this repository initialization.
+security fixes.
 
 Viewing the collection is public to anyone who can reach the server. The optional
 administrator password protects modifications and icon requests, not reading
