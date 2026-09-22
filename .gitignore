@@ -12,6 +12,10 @@
 services.json
 services.backup*.json
 .services-*
+site.json
+.site-*
+background-*
+.background-*
 *.db
 *.db-*
 *.sqlite*

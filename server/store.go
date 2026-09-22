@@ -6,14 +6,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sync"
 )
 
 const maxServices = 500
 
 var errNotFound = errors.New("service not found")
+
+// Background files are named by the store, so a saved name never reaches the
+// filesystem unless it matches this pattern.
+var backgroundName = regexp.MustCompile(`^background-[0-9a-f]{24}\.(jpg|png|gif|webp)$`)
 
 type service struct {
 	ID          string `json:"id"`
@@ -29,17 +35,35 @@ type database struct {
 	Services []service `json:"services"`
 }
 
+// Site identity and the custom background image are shared by every device.
+// An empty title or icon means the built-in default.
+type siteSettings struct {
+	Title      string `json:"title"`
+	Icon       string `json:"icon"`
+	Background string `json:"background"`
+}
+
+type siteFile struct {
+	Version int `json:"version"`
+	siteSettings
+}
+
 type store struct {
-	mu   sync.RWMutex
-	path string
-	data database
+	mu       sync.RWMutex
+	path     string
+	data     database
+	sitePath string
+	site     siteSettings
 }
 
 func openStore(dir string) (*store, error) {
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return nil, err
 	}
-	s := &store{path: filepath.Join(dir, "services.json"), data: database{Version: 1, Services: []service{}}}
+	s := &store{path: filepath.Join(dir, "services.json"), data: database{Version: 1, Services: []service{}}, sitePath: filepath.Join(dir, "site.json")}
+	if err := s.loadSite(); err != nil {
+		return nil, err
+	}
 	raw, err := os.ReadFile(s.path)
 	if errors.Is(err, os.ErrNotExist) {
 		return s, nil
@@ -73,20 +97,61 @@ func (s *store) list() []service {
 	return append([]service{}, s.data.Services...)
 }
 
-// Persist a complete snapshot before exposing the change in memory. A failed
-// write leaves the previous configuration intact.
-func (s *store) commit(items []service) error {
-	next := database{Version: 1, Services: items}
-	raw, err := json.MarshalIndent(next, "", "  ")
+// An absent site.json keeps the defaults. Invalid saved settings fail startup
+// without replacing the file, like services.json.
+func (s *store) loadSite() error {
+	raw, err := os.ReadFile(s.sitePath)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
 	if err != nil {
 		return err
 	}
-	tmp, err := os.CreateTemp(filepath.Dir(s.path), ".services-*")
+	var saved siteFile
+	if err := json.Unmarshal(raw, &saved); err != nil {
+		return fmt.Errorf("invalid site.json (the file has been preserved): %w", err)
+	}
+	if saved.Version != 1 {
+		return errors.New("unsupported site.json version")
+	}
+	if err := validateSite(&saved.siteSettings); err != nil {
+		return fmt.Errorf("invalid site.json: %w", err)
+	}
+	if saved.Background != "" {
+		if _, err := os.Stat(filepath.Join(filepath.Dir(s.sitePath), saved.Background)); err != nil {
+			// Fall back to the built-in wallpapers instead of refusing to start.
+			log.Printf("custom background unavailable: %v", err)
+			saved.Background = ""
+		}
+	}
+	s.site = saved.siteSettings
+	return nil
+}
+
+func validateSite(item *siteSettings) error {
+	if err := validateTitle(&item.Title); err != nil {
+		return err
+	}
+	if item.Icon != "" {
+		if err := validateIconData(item.Icon); err != nil {
+			return err
+		}
+	}
+	if item.Background != "" && !backgroundName.MatchString(item.Background) {
+		return errors.New("invalid background file name")
+	}
+	return nil
+}
+
+// Write a complete file beside its destination and rename it into place, so a
+// failure leaves the previous file intact.
+func writeAtomic(path, pattern string, raw []byte) error {
+	tmp, err := os.CreateTemp(filepath.Dir(path), pattern)
 	if err != nil {
 		return err
 	}
 	defer os.Remove(tmp.Name())
-	if _, err = tmp.Write(append(raw, '\n')); err != nil {
+	if _, err = tmp.Write(raw); err != nil {
 		tmp.Close()
 		return err
 	}
@@ -97,11 +162,115 @@ func (s *store) commit(items []service) error {
 	if err = tmp.Close(); err != nil {
 		return err
 	}
-	if err = os.Rename(tmp.Name(), s.path); err != nil {
+	return os.Rename(tmp.Name(), path)
+}
+
+// Persist a complete snapshot before exposing the change in memory. A failed
+// write leaves the previous configuration intact.
+func (s *store) commit(items []service) error {
+	next := database{Version: 1, Services: items}
+	raw, err := json.MarshalIndent(next, "", "  ")
+	if err != nil {
+		return err
+	}
+	if err = writeAtomic(s.path, ".services-*", append(raw, '\n')); err != nil {
 		return err
 	}
 	s.data = next
 	return nil
+}
+
+func (s *store) commitSite(next siteSettings) error {
+	raw, err := json.MarshalIndent(siteFile{Version: 1, siteSettings: next}, "", "  ")
+	if err != nil {
+		return err
+	}
+	if err = writeAtomic(s.sitePath, ".site-*", append(raw, '\n')); err != nil {
+		return err
+	}
+	s.site = next
+	return nil
+}
+
+func (s *store) siteSettings() siteSettings {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.site
+}
+
+// A nil icon keeps the saved icon; an empty one restores the default.
+func (s *store) setIdentity(title string, icon *string) (siteSettings, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	next := s.site
+	next.Title = title
+	if icon != nil {
+		next.Icon = *icon
+	}
+	if err := s.commitSite(next); err != nil {
+		return siteSettings{}, err
+	}
+	return next, nil
+}
+
+// Store the image under a fresh name before switching site.json to it, then
+// remove the previous image. A failure keeps the previous background.
+func (s *store) setBackground(raw []byte, extension string) (siteSettings, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	id := make([]byte, 12)
+	if _, err := rand.Read(id); err != nil {
+		return siteSettings{}, err
+	}
+	name := "background-" + hex.EncodeToString(id) + "." + extension
+	path := filepath.Join(filepath.Dir(s.sitePath), name)
+	if err := writeAtomic(path, ".background-*", raw); err != nil {
+		return siteSettings{}, err
+	}
+	previous := s.site.Background
+	next := s.site
+	next.Background = name
+	if err := s.commitSite(next); err != nil {
+		os.Remove(path)
+		return siteSettings{}, err
+	}
+	s.removeBackgroundFile(previous)
+	return next, nil
+}
+
+func (s *store) clearBackground() (siteSettings, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	previous := s.site.Background
+	next := s.site
+	next.Background = ""
+	if previous == "" {
+		return next, nil
+	}
+	if err := s.commitSite(next); err != nil {
+		return siteSettings{}, err
+	}
+	s.removeBackgroundFile(previous)
+	return next, nil
+}
+
+// A leftover file only costs disk space, so removal failures are logged.
+func (s *store) removeBackgroundFile(name string) {
+	if name == "" {
+		return
+	}
+	if err := os.Remove(filepath.Join(filepath.Dir(s.sitePath), name)); err != nil && !errors.Is(err, os.ErrNotExist) {
+		log.Printf("remove previous background: %v", err)
+	}
+}
+
+func (s *store) openBackground(name string) (*os.File, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if name == "" || name != s.site.Background {
+		return nil, os.ErrNotExist
+	}
+	return os.Open(filepath.Join(filepath.Dir(s.sitePath), name))
 }
 
 func (s *store) add(item service) (service, error) {

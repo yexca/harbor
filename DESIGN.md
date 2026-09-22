@@ -27,6 +27,9 @@ current direction and constrain future UI changes.
   home selection live here.
 - Settings contains appearance, clock, background, management entry points,
   and editing access. Keep it near its top-right trigger on larger screens.
+- Customize Harbor edits the shared title, page icon, and custom background with
+  the same explicit save/cancel pattern as the service editor. The Custom
+  background tile opens it until an image exists.
 - Add/edit forms use labeled fields, explicit save/cancel actions, an icon
   preview, and Show on home. Return users to the panel that opened the editor.
 - Explain failures near the action and preserve the entered form values.

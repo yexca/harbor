@@ -8,6 +8,10 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"net"
 	"net/http"
@@ -18,7 +22,13 @@ import (
 	"time"
 )
 
-const maxIconBytes int64 = 512 << 10
+const (
+	maxIconBytes       int64 = 512 << 10
+	maxBackgroundBytes int64 = 10 << 20
+	maxBackgroundSide        = 16384
+)
+
+var backgroundTypes = map[string]string{"jpg": "image/jpeg", "png": "image/png", "gif": "image/gif", "webp": "image/webp"}
 
 // Private LAN addresses are intentional targets for a NAS dashboard. Loopback,
 // link-local (including cloud metadata), multicast and unspecified addresses are not.
@@ -226,6 +236,30 @@ func imageData(raw []byte) (string, error) {
 		mime = "image/svg+xml"
 	}
 	return "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(raw), nil
+}
+
+// Validate an uploaded background by its contents and return the extension it
+// is stored under. The standard library has no WebP decoder, so WebP is
+// accepted by signature and served with a fixed image type.
+func backgroundExtension(raw []byte) (string, error) {
+	if len(raw) == 0 || int64(len(raw)) > maxBackgroundBytes {
+		return "", errors.New("Use an image smaller than 10 MB.")
+	}
+	mime := http.DetectContentType(raw)
+	for extension, contentType := range backgroundTypes {
+		if contentType != mime {
+			continue
+		}
+		if extension == "webp" {
+			return extension, nil
+		}
+		config, _, err := image.DecodeConfig(bytes.NewReader(raw))
+		if err != nil || config.Width < 1 || config.Height < 1 || config.Width > maxBackgroundSide || config.Height > maxBackgroundSide {
+			return "", errors.New("The image is damaged or larger than 16384 pixels on a side.")
+		}
+		return extension, nil
+	}
+	return "", errors.New("Use a JPEG, PNG, GIF, or WebP image.")
 }
 
 func validateIconData(value string) error {

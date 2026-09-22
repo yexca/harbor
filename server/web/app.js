@@ -1,7 +1,7 @@
 "use strict";
 
 const $ = (selector) => document.querySelector(selector);
-const state = { services: [], canEdit: false, protected: false, loaded: false, editing: null, icon: "", iconManual: false, iconRequest: 0, iconController: null, lastIconURL: "", saving: false, toastTimer: null, clockTimer: null, editorReturn: null, afterLogin: null, visibilityPending: new Set(), results: [], selectedId: null };
+const state = { services: [], canEdit: false, protected: false, loaded: false, editing: null, icon: "", iconManual: false, iconRequest: 0, iconController: null, lastIconURL: "", saving: false, toastTimer: null, clockTimer: null, editorReturn: null, afterLogin: null, visibilityPending: new Set(), results: [], selectedId: null, site: { title: document.title, icon: "", customIcon: false, background: document.documentElement.dataset.background || "" }, siteIcon: undefined, siteBackground: undefined, siteBackgroundPreview: "" };
 
 function storageGet(key) { try { return localStorage.getItem(key); } catch { return null; } }
 function storageSet(key, value) { try { localStorage.setItem(key, value); } catch { /* Preferences are optional when browser storage is disabled. */ } }
@@ -14,17 +14,42 @@ function applyTheme(choice = preferences.theme) {
   document.documentElement.dataset.theme = choice === "system" ? (systemTheme.matches ? "dark" : "light") : choice;
   document.querySelectorAll("[data-theme-choice]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.themeChoice === choice)));
 }
+// A saved custom choice shows the default wallpaper while no custom image exists.
 function applyWallpaper(choice = preferences.wallpaper) {
-  if (!["mountain", "dusk", "midnight"].includes(choice)) choice = "mountain";
+  if (!["mountain", "dusk", "midnight", "custom"].includes(choice)) choice = "mountain";
   preferences.wallpaper = choice;
-  document.documentElement.dataset.wallpaper = choice;
-  document.querySelectorAll("[data-wallpaper-choice]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.wallpaperChoice === choice)));
+  const shown = choice === "custom" && !state.site.background ? "mountain" : choice;
+  document.documentElement.dataset.wallpaper = shown;
+  document.querySelectorAll("[data-wallpaper-choice]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.wallpaperChoice === shown)));
+}
+function applyBackgroundImage(url) {
+  const root = document.documentElement;
+  root.dataset.background = url;
+  // Background URLs are server-generated paths; CSSOM keeps the style policy intact.
+  if (url) root.style.setProperty("--custom-background", `url("${url}")`);
+  else root.style.removeProperty("--custom-background");
+  $("#custom-wallpaper").setAttribute("aria-label", url ? "Custom background" : "Add a custom background");
 }
 document.querySelectorAll("[data-theme-choice]").forEach((button) => button.addEventListener("click", () => { applyTheme(button.dataset.themeChoice); storageSet("harbor-theme", preferences.theme); }));
-document.querySelectorAll("[data-wallpaper-choice]").forEach((button) => button.addEventListener("click", () => { applyWallpaper(button.dataset.wallpaperChoice); storageSet("harbor-wallpaper", preferences.wallpaper); }));
+document.querySelectorAll("[data-wallpaper-choice]").forEach((button) => button.addEventListener("click", () => {
+  if (button.dataset.wallpaperChoice === "custom" && !state.site.background) { openSiteEditor(); return; }
+  applyWallpaper(button.dataset.wallpaperChoice);
+  storageSet("harbor-wallpaper", preferences.wallpaper);
+}));
 systemTheme.addEventListener("change", () => applyTheme());
 applyTheme();
+applyBackgroundImage(state.site.background);
 applyWallpaper();
+
+function applySite(site) {
+  state.site = site;
+  document.title = site.title;
+  $("#site-title").textContent = site.title;
+  $("#footer-title").textContent = site.title;
+  document.querySelector('link[rel="icon"]').href = site.icon;
+  applyBackgroundImage(site.background);
+  applyWallpaper();
+}
 
 function updateClock() {
   clearTimeout(state.clockTimer);
@@ -295,8 +320,9 @@ async function load() {
   $("#load-error").hidden = true;
   $("#loading").hidden = false;
   try {
-    const [services, session] = await Promise.all([api("/api/services"), api("/api/session")]);
+    const [services, session, site] = await Promise.all([api("/api/services"), api("/api/session"), api("/api/site")]);
     state.services = services;
+    applySite(site);
     state.canEdit = session.canEdit;
     state.protected = session.protected;
     state.loaded = true;
@@ -447,34 +473,43 @@ $("#reset-icon").addEventListener("click", () => {
   updatePreview();
   $("#icon-status").textContent = "Using initials. You can fetch or upload an icon anytime.";
 });
+function readDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Could not read that file."));
+    reader.readAsDataURL(file);
+  });
+}
+
+// The server validates icon contents; this normalizes ICO types and gives quick feedback.
+async function readIconFile(file) {
+  if (file.size > 512 * 1024) throw new Error("Choose an image smaller than 512 KB.");
+  let icon = (await readDataURL(file)).replace(/^data:image\/vnd.microsoft.icon;/, "data:image/x-icon;");
+  if (/\.ico$/i.test(file.name)) icon = icon.replace(/^data:[^;]*;/, "data:image/x-icon;");
+  if (!icon.startsWith("data:image/")) throw new Error("Choose a PNG, JPEG, GIF, WebP, ICO, or simple SVG image.");
+  return icon;
+}
+
 $("#icon-file").addEventListener("change", async (event) => {
   const file = event.target.files[0];
+  event.target.value = "";
   if (!file) return;
   cancelIconRequest();
   const request = state.iconRequest;
-  if (file.size > 512 * 1024) { $("#icon-status").textContent = "Choose an image smaller than 512 KB."; event.target.value = ""; return; }
   try {
-    const data = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(new Error("Could not read that file."));
-      reader.readAsDataURL(file);
-    });
+    const icon = await readIconFile(file);
     if (request !== state.iconRequest || !$("#service-dialog").open) return;
-    let icon = data.replace(/^data:image\/vnd.microsoft.icon;/, "data:image/x-icon;");
-    if (/\.ico$/i.test(file.name)) icon = icon.replace(/^data:[^;]*;/, "data:image/x-icon;");
-    if (!icon.startsWith("data:image/")) throw new Error("Choose a PNG, JPEG, GIF, WebP, ICO, or simple SVG image.");
     state.icon = icon;
     state.iconManual = true;
     updatePreview();
     $("#icon-status").textContent = `${file.name} · ${(file.size / 1024).toFixed(0)} KB`;
   } catch (error) { $("#icon-status").textContent = error.message; }
-  event.target.value = "";
 });
 
-function setSaving(saving) {
+function setSaving(saving, form = $("#service-form")) {
   state.saving = saving;
-  for (const control of $("#service-form").querySelectorAll("input, button")) control.disabled = saving;
+  for (const control of form.querySelectorAll("input, button")) control.disabled = saving;
 }
 
 $("#service-form").addEventListener("submit", async (event) => {
@@ -501,6 +536,109 @@ $("#service-form").addEventListener("submit", async (event) => {
   } catch (error) { showError("#form-error", error.message); }
   finally { setSaving(false); $("#save-button").textContent = editing ? "Save changes" : "Add service"; }
 });
+
+// Title and icon save together, then a changed background is uploaded or removed.
+// Drafts are undefined when unchanged; an empty icon or null background restores the default.
+function openSiteEditor() {
+  if (!state.canEdit) { state.afterLogin = openSiteEditor; openLogin(); return; }
+  closeNavigationPanels();
+  state.siteIcon = undefined;
+  state.siteBackground = undefined;
+  state.siteBackgroundPreview = "";
+  $("#site-form").reset();
+  $("#site-title-input").value = state.site.title;
+  $("#site-icon-status").textContent = "Shown as the browser tab icon.";
+  $("#background-status").textContent = "JPEG, PNG, GIF, or WebP, up to 10 MB. Choose it under Background on each device.";
+  showError("#site-error", "");
+  updateSitePreview();
+  $("#site-dialog").showModal();
+  $("#site-dialog .dialog-body").scrollTop = 0;
+  $("#site-title-input").focus({ preventScroll: true });
+}
+
+function updateSitePreview() {
+  const custom = state.siteIcon === undefined ? state.site.customIcon : Boolean(state.siteIcon);
+  $("#site-icon-preview").src = state.siteIcon || (state.siteIcon === undefined ? state.site.icon : "/favicon.svg");
+  $("#reset-site-icon").hidden = !custom;
+  const background = state.siteBackground === undefined ? state.site.background : state.siteBackground ? state.siteBackgroundPreview : "";
+  const preview = $("#background-preview-image");
+  if (background) preview.src = background; else preview.removeAttribute("src");
+  preview.hidden = !background;
+  $("#background-empty").hidden = Boolean(background);
+  $("#remove-background").hidden = !background;
+}
+
+$("#customize-button").addEventListener("click", openSiteEditor);
+$("#upload-site-icon").addEventListener("click", () => $("#site-icon-file").click());
+$("#upload-background").addEventListener("click", () => $("#background-file").click());
+$("#reset-site-icon").addEventListener("click", () => {
+  state.siteIcon = "";
+  updateSitePreview();
+  $("#site-icon-status").textContent = "The Harbor icon will be restored when you save.";
+});
+$("#remove-background").addEventListener("click", () => {
+  state.siteBackground = null;
+  state.siteBackgroundPreview = "";
+  updateSitePreview();
+  $("#background-status").textContent = "The custom background will be removed when you save.";
+});
+$("#site-icon-file").addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  event.target.value = "";
+  if (!file) return;
+  try {
+    const icon = await readIconFile(file);
+    if (!$("#site-dialog").open) return;
+    state.siteIcon = icon;
+    updateSitePreview();
+    $("#site-icon-status").textContent = `${file.name} · ${(file.size / 1024).toFixed(0)} KB`;
+  } catch (error) { $("#site-icon-status").textContent = error.message; }
+});
+$("#background-file").addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  event.target.value = "";
+  if (!file) return;
+  if (!["image/jpeg", "image/png", "image/gif", "image/webp"].includes(file.type)) { $("#background-status").textContent = "Choose a JPEG, PNG, GIF, or WebP image."; return; }
+  if (file.size > 10 * 1024 * 1024) { $("#background-status").textContent = "Choose an image smaller than 10 MB."; return; }
+  try {
+    const preview = await readDataURL(file);
+    if (!$("#site-dialog").open) return;
+    state.siteBackground = file;
+    state.siteBackgroundPreview = preview;
+    updateSitePreview();
+    $("#background-status").textContent = `${file.name} · ${(file.size / 1048576).toFixed(1)} MB. It will be uploaded when you save.`;
+  } catch (error) { $("#background-status").textContent = error.message; }
+});
+
+$("#site-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (state.saving) return;
+  showError("#site-error", "");
+  const body = { title: $("#site-title-input").value.trim() };
+  if (state.siteIcon !== undefined) body.icon = state.siteIcon;
+  const background = state.siteBackground;
+  setSaving(true, $("#site-form"));
+  $("#site-save").textContent = "Saving…";
+  try {
+    applySite(await api("/api/site", { method: "PUT", body: JSON.stringify(body) }));
+    state.siteIcon = undefined;
+    if (background === null) applySite(await api("/api/site/background", { method: "DELETE" }));
+    else if (background) {
+      $("#site-save").textContent = "Uploading…";
+      applySite(await api("/api/site/background", { method: "PUT", body: background, headers: { "Content-Type": background.type } }));
+      // Uploading a background is a clear request to see it on this device.
+      applyWallpaper("custom");
+      storageSet("harbor-wallpaper", preferences.wallpaper);
+    }
+    state.siteBackground = undefined;
+    $("#site-dialog").close();
+    toast("Harbor customized.");
+  } catch (error) {
+    updateSitePreview();
+    showError("#site-error", error.message);
+  } finally { setSaving(false, $("#site-form")); $("#site-save").textContent = "Save"; }
+});
+$("#site-dialog").addEventListener("close", openSettings);
 
 $("#delete-button").addEventListener("click", () => {
   $("#delete-description").textContent = `“${state.editing.name}” will be removed from Harbor. The service itself will not be affected.`;

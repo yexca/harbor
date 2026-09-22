@@ -48,14 +48,27 @@ content is rejected. If fetching fails, keep the initials or upload an image;
 an icon is not required to save a service. The NAS must trust the site's TLS
 certificate and reach its address. Container `localhost` is not the NAS host.
 
+## Customize Harbor
+
+**Settings → Customize Harbor** changes the browser tab title, the page icon,
+and a custom background image. These are saved on the NAS and shared by every
+device. Leave the title empty or choose **Use default** to restore Harbor's own
+title and icon. The page icon accepts the same formats as service icons.
+
+The custom background accepts JPEG, PNG, GIF, or WebP up to 10 MB. It is uploaded
+when you save and becomes the background on that device. Other devices choose
+**Custom** under Background in Settings. Uploading a new image replaces the
+previous one; **Remove** deletes it, and devices using it return to Mountain.
+
 ## Settings and Editing Access
 
-Settings offers System/Light/Dark panels, Mountain/Dusk/Midnight backgrounds,
-and a 12/24-hour clock. Preferences are saved in this browser. The clock uses
+Settings offers System/Light/Dark panels, Mountain/Dusk/Midnight/Custom
+backgrounds, and a 12/24-hour clock. These choices are saved in this browser.
+Selecting **Custom** before an image exists opens Customize Harbor. The clock uses
 device time, updates at minute boundaries, and pauses its timer in hidden tabs.
 
 If the server has an editing password, use **Unlock editing** before changing
-services or fetching icons. Viewing the collection remains available. Sessions
+services, fetching icons, or customizing Harbor. Viewing the collection remains available. Sessions
 expire after 24 hours or a server restart. **Lock editing** ends the session.
 
 Dismiss panels with Escape, the close button, or an outside click. Saving prevents

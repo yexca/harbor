@@ -2,6 +2,7 @@
 
 - [ADR-0001: Lightweight single-process runtime](ADR-0001-lightweight-runtime.md)
 - [ADR-0002: Home selection and local appearance](ADR-0002-start-page-state.md)
+- [ADR-0003: Shared site identity and custom background](ADR-0003-site-customization.md)
 
 Add an ADR for a lasting change to runtime dependencies, persistence, deployment,
 or product boundaries. Routine details belong in code and area documentation.

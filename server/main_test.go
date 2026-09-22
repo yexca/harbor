@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/png"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -323,5 +325,160 @@ func TestIconValidation(t *testing.T) {
 		if !allowedIconIP(netip.MustParseAddr(addr)) {
 			t.Errorf("expected IP rejected: %s", addr)
 		}
+	}
+}
+
+func pngImage(t *testing.T) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, image.NewRGBA(image.Rect(0, 0, 4, 3))); err != nil {
+		t.Fatal(err)
+	}
+	return buf.Bytes()
+}
+
+func uploadBackground(t *testing.T, handler http.Handler, raw []byte, cookie *http.Cookie) *httptest.ResponseRecorder {
+	t.Helper()
+	r := httptest.NewRequest("PUT", "/api/site/background", bytes.NewReader(raw))
+	r.Header.Set("Content-Type", "image/png")
+	r.Header.Set("X-Harbor-Request", "1")
+	if cookie != nil {
+		r.AddCookie(cookie)
+	}
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+	return w
+}
+
+func TestSiteIdentitySurvivesRestartAndEscapes(t *testing.T) {
+	a := testApp(t, "")
+	handler := a.handler()
+	page := request(t, handler, "GET", "/", nil, nil)
+	if page.Code != 200 || !strings.Contains(page.Body.String(), "<title>Harbor</title>") || !strings.Contains(page.Body.String(), `href="/favicon.svg"`) {
+		t.Fatalf("default page: %d %s", page.Code, page.Body)
+	}
+	icon, err := imageData(pngImage(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := request(t, handler, "PUT", "/api/site", map[string]string{"title": " Home <NAS> & co ", "icon": icon}, nil)
+	var view siteView
+	json.Unmarshal(w.Body.Bytes(), &view)
+	if w.Code != 200 || view.Title != "Home <NAS> & co" || !view.CustomIcon || !strings.HasPrefix(view.Icon, "/site-icon?v=") {
+		t.Fatalf("update site: %d %s", w.Code, w.Body)
+	}
+	page = request(t, handler, "GET", "/", nil, nil)
+	if body := page.Body.String(); !strings.Contains(body, "<title>Home &lt;NAS&gt; &amp; co</title>") || strings.Contains(body, "<NAS>") || !strings.Contains(body, view.Icon) {
+		t.Fatalf("title or icon not rendered safely: %s", body)
+	}
+	served := request(t, handler, "GET", "/site-icon", nil, nil)
+	if served.Code != 200 || served.Header().Get("Content-Type") != "image/png" || !strings.Contains(served.Header().Get("Content-Security-Policy"), "sandbox") {
+		t.Fatalf("site icon: %d %v", served.Code, served.Header())
+	}
+	// Omitting the icon keeps it; an invalid update leaves the saved settings unchanged.
+	if w := request(t, handler, "PUT", "/api/site", map[string]string{"title": "Den"}, nil); w.Code != 200 || !strings.Contains(w.Body.String(), `"customIcon":true`) {
+		t.Fatalf("title-only update: %d %s", w.Code, w.Body)
+	}
+	if w := request(t, handler, "PUT", "/api/site", map[string]string{"title": strings.Repeat("x", 61)}, nil); w.Code != 400 {
+		t.Fatalf("long title accepted: %d", w.Code)
+	}
+	if w := request(t, handler, "PUT", "/api/site", map[string]string{"title": "Den", "icon": "data:image/png;base64,bm90"}, nil); w.Code != 400 {
+		t.Fatalf("invalid icon accepted: %d", w.Code)
+	}
+	reopened, err := openStore(filepath.Dir(a.store.path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if site := reopened.siteSettings(); site.Title != "Den" || site.Icon != icon {
+		t.Fatalf("site not persisted: %+v", site)
+	}
+	if w := request(t, handler, "PUT", "/api/site", map[string]string{"title": "", "icon": ""}, nil); w.Code != 200 || !strings.Contains(w.Body.String(), `"title":"Harbor"`) || request(t, handler, "GET", "/site-icon", nil, nil).Code != 404 {
+		t.Fatalf("reset site: %d %s", w.Code, w.Body)
+	}
+}
+
+func TestBackgroundReplacementAndRemoval(t *testing.T) {
+	a := testApp(t, "")
+	handler := a.handler()
+	dir := filepath.Dir(a.store.path)
+	w := uploadBackground(t, handler, pngImage(t), nil)
+	var first siteView
+	json.Unmarshal(w.Body.Bytes(), &first)
+	if w.Code != 200 || !strings.HasPrefix(first.Background, "/backgrounds/background-") {
+		t.Fatalf("upload: %d %s", w.Code, w.Body)
+	}
+	served := request(t, handler, "GET", first.Background, nil, nil)
+	if served.Code != 200 || served.Header().Get("Content-Type") != "image/png" || !bytes.Equal(served.Body.Bytes(), pngImage(t)) {
+		t.Fatalf("serve background: %d %v", served.Code, served.Header())
+	}
+	if page := request(t, handler, "GET", "/", nil, nil); !strings.Contains(page.Body.String(), `data-background="`+first.Background+`"`) {
+		t.Fatal("background not rendered into the page")
+	}
+	// Invalid images and failed saves keep the previous background.
+	if w := uploadBackground(t, handler, []byte("<svg/>"), nil); w.Code != 400 {
+		t.Fatalf("SVG background accepted: %d", w.Code)
+	}
+	if w := uploadBackground(t, handler, bytes.Repeat([]byte{0}, int(maxBackgroundBytes)+1), nil); w.Code != 413 {
+		t.Fatalf("oversized background accepted: %d", w.Code)
+	}
+	w = uploadBackground(t, handler, pngImage(t), nil)
+	var second siteView
+	json.Unmarshal(w.Body.Bytes(), &second)
+	if w.Code != 200 || second.Background == first.Background {
+		t.Fatalf("replace: %d %s", w.Code, w.Body)
+	}
+	if request(t, handler, "GET", first.Background, nil, nil).Code != 404 {
+		t.Fatal("replaced background is still served")
+	}
+	if _, err := os.Stat(filepath.Join(dir, strings.TrimPrefix(first.Background, "/backgrounds/"))); !os.IsNotExist(err) {
+		t.Fatal("replaced background file was not removed")
+	}
+	reopened, err := openStore(dir)
+	if err != nil || "/backgrounds/"+reopened.siteSettings().Background != second.Background {
+		t.Fatalf("background not persisted: %v", err)
+	}
+	if request(t, handler, "GET", "/backgrounds/..%2Fsite.json", nil, nil).Code != 404 {
+		t.Fatal("unexpected file served")
+	}
+	if w := request(t, handler, "DELETE", "/api/site/background", nil, nil); w.Code != 200 || !strings.Contains(w.Body.String(), `"background":""`) {
+		t.Fatalf("remove: %d %s", w.Code, w.Body)
+	}
+	entries, _ := os.ReadDir(dir)
+	for _, entry := range entries {
+		if strings.HasPrefix(entry.Name(), "background-") || strings.HasPrefix(entry.Name(), ".") {
+			t.Fatalf("leftover file: %s", entry.Name())
+		}
+	}
+}
+
+func TestSiteChangesRequireEditing(t *testing.T) {
+	a := testApp(t, "secret")
+	handler := a.handler()
+	if w := request(t, handler, "PUT", "/api/site", map[string]string{"title": "Den"}, nil); w.Code != 401 {
+		t.Fatalf("unprotected site update: %d", w.Code)
+	}
+	if w := uploadBackground(t, handler, pngImage(t), nil); w.Code != 401 {
+		t.Fatalf("unprotected background upload: %d", w.Code)
+	}
+	if w := request(t, handler, "DELETE", "/api/site/background", nil, nil); w.Code != 401 {
+		t.Fatalf("unprotected background removal: %d", w.Code)
+	}
+	if w := request(t, handler, "GET", "/api/site", nil, nil); w.Code != 200 {
+		t.Fatalf("public site view: %d", w.Code)
+	}
+}
+
+func TestCorruptSiteSettingsPreserved(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "site.json")
+	raw := []byte(`{"version":1,"title":"Den","background":"../services.json"}`)
+	if err := os.WriteFile(file, raw, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := openStore(dir); err == nil {
+		t.Fatal("unsafe background name accepted")
+	}
+	if after, err := os.ReadFile(file); err != nil || !bytes.Equal(raw, after) {
+		t.Fatal("site settings were overwritten")
 	}
 }

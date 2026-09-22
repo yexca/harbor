@@ -7,6 +7,8 @@ lookup. Its assets are embedded and served by the local application.
 
 - The NAS stores service IDs, names, addresses, descriptions, icons, and home
   visibility in `services.json`. This file is not encrypted by Harbor.
+- The NAS stores the page title, page icon, and custom background image in
+  `site.json` and a `background-*` file. Anyone who can reach Harbor can view them.
 - The browser stores theme, wallpaper, and clock-format preferences in localStorage.
   These preferences do not synchronize between devices.
 - An optional editing password is supplied through the process environment.

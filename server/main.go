@@ -1,14 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
 	"embed"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"html/template"
 	"io"
 	"io/fs"
 	"log"
@@ -16,14 +19,22 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
+	"unicode"
 )
 
 //go:embed web/*
 var assets embed.FS
+
+// The start page is rendered on the server so the tab title, favicon, and
+// custom background are correct before any script runs.
+var pageTemplate = template.Must(template.ParseFS(assets, "web/index.html"))
+
+const defaultTitle = "Harbor"
 
 type application struct {
 	store      *store
@@ -97,10 +108,17 @@ func (a *application) handler() http.Handler {
 	mux.Handle("PATCH /api/services/{id}/visibility", a.editor(http.HandlerFunc(a.updateVisibility)))
 	mux.Handle("DELETE /api/services/{id}", a.editor(http.HandlerFunc(a.deleteService)))
 	mux.Handle("POST /api/icon", a.editor(http.HandlerFunc(a.fetchIcon)))
+	mux.HandleFunc("GET /api/site", func(w http.ResponseWriter, r *http.Request) { writeJSON(w, 200, viewSite(a.store.siteSettings())) })
+	mux.Handle("PUT /api/site", a.editor(http.HandlerFunc(a.updateSite)))
+	mux.Handle("PUT /api/site/background", a.editor(http.HandlerFunc(a.uploadBackground)))
+	mux.Handle("DELETE /api/site/background", a.editor(http.HandlerFunc(a.deleteBackground)))
+	mux.HandleFunc("GET /site-icon", a.siteIcon)
+	mux.HandleFunc("GET /backgrounds/{name}", a.background)
+	mux.HandleFunc("GET /{$}", a.page)
 	web, _ := fs.Sub(assets, "web")
 	files := http.FileServer(http.FS(web))
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" && r.URL.Path != "/app.js" && r.URL.Path != "/style.css" && r.URL.Path != "/favicon.svg" && r.URL.Path != "/wallpaper.jpg" {
+		if r.URL.Path != "/app.js" && r.URL.Path != "/style.css" && r.URL.Path != "/favicon.svg" && r.URL.Path != "/wallpaper.jpg" {
 			http.NotFound(w, r)
 			return
 		}
@@ -281,6 +299,145 @@ func (a *application) storeError(w http.ResponseWriter, err error) {
 	}
 	log.Printf("save configuration: %v", err)
 	writeError(w, 500, "Could not save your changes. Check the data directory permissions and free space.")
+}
+
+type siteView struct {
+	Title      string `json:"title"`
+	Icon       string `json:"icon"`
+	CustomIcon bool   `json:"customIcon"`
+	Background string `json:"background"`
+}
+
+// Browsers load the icon and background by URL; the icon URL changes with its
+// contents so a replaced favicon is not served from cache.
+func viewSite(item siteSettings) siteView {
+	view := siteView{Title: item.Title, Icon: "/favicon.svg", CustomIcon: item.Icon != ""}
+	if view.Title == "" {
+		view.Title = defaultTitle
+	}
+	if item.Icon != "" {
+		sum := sha256.Sum256([]byte(item.Icon))
+		view.Icon = "/site-icon?v=" + hex.EncodeToString(sum[:6])
+	}
+	if item.Background != "" {
+		view.Background = "/backgrounds/" + item.Background
+	}
+	return view
+}
+
+func (a *application) page(w http.ResponseWriter, r *http.Request) {
+	var body bytes.Buffer
+	if err := pageTemplate.Execute(&body, viewSite(a.store.siteSettings())); err != nil {
+		log.Printf("render page: %v", err)
+		http.Error(w, "Could not render the page.", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Write(body.Bytes())
+}
+
+func (a *application) updateSite(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Title string  `json:"title"`
+		Icon  *string `json:"icon"`
+	}
+	if !readJSON(w, r, &input, maxIconBytes*2+4096) {
+		return
+	}
+	if err := validateTitle(&input.Title); err != nil {
+		writeError(w, 400, err.Error())
+		return
+	}
+	if input.Icon != nil && *input.Icon != "" {
+		if err := validateIconData(*input.Icon); err != nil {
+			writeError(w, 400, err.Error())
+			return
+		}
+	}
+	item, err := a.store.setIdentity(input.Title, input.Icon)
+	if err != nil {
+		a.storeError(w, err)
+		return
+	}
+	writeJSON(w, 200, viewSite(item))
+}
+
+func (a *application) uploadBackground(w http.ResponseWriter, r *http.Request) {
+	raw, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxBackgroundBytes))
+	if err != nil {
+		writeError(w, 413, "Use an image smaller than 10 MB.")
+		return
+	}
+	extension, err := backgroundExtension(raw)
+	if err != nil {
+		writeError(w, 400, err.Error())
+		return
+	}
+	item, err := a.store.setBackground(raw, extension)
+	if err != nil {
+		a.storeError(w, err)
+		return
+	}
+	writeJSON(w, 200, viewSite(item))
+}
+
+func (a *application) deleteBackground(w http.ResponseWriter, r *http.Request) {
+	item, err := a.store.clearBackground()
+	if err != nil {
+		a.storeError(w, err)
+		return
+	}
+	writeJSON(w, 200, viewSite(item))
+}
+
+// Stored images are served as passive files: a sandbox policy keeps an SVG
+// icon opened directly from running anything.
+func (a *application) siteIcon(w http.ResponseWriter, r *http.Request) {
+	icon := a.store.siteSettings().Icon
+	header, body, _ := strings.Cut(icon, ",")
+	raw, err := base64.StdEncoding.DecodeString(body)
+	if icon == "" || err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	sum := sha256.Sum256([]byte(icon))
+	w.Header().Set("Content-Type", strings.TrimSuffix(strings.TrimPrefix(header, "data:"), ";base64"))
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("ETag", `"`+hex.EncodeToString(sum[:8])+`"`)
+	http.ServeContent(w, r, "", time.Time{}, bytes.NewReader(raw))
+}
+
+// Each upload gets a new file name, so a background URL never changes contents.
+func (a *application) background(w http.ResponseWriter, r *http.Request) {
+	name := r.PathValue("name")
+	file, err := a.store.openBackground(name)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	defer file.Close()
+	info, err := file.Stat()
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", backgroundTypes[strings.TrimPrefix(filepath.Ext(name), ".")])
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; sandbox")
+	w.Header().Set("Cache-Control", "max-age=31536000, immutable")
+	http.ServeContent(w, r, name, info.ModTime(), file)
+}
+
+func validateTitle(title *string) error {
+	*title = strings.TrimSpace(*title)
+	if len([]rune(*title)) > 60 {
+		return errors.New("Keep the title under 60 characters.")
+	}
+	if strings.IndexFunc(*title, unicode.IsControl) >= 0 {
+		return errors.New("The title cannot contain control characters.")
+	}
+	return nil
 }
 
 func validateService(item *service) error {

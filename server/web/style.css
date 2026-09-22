@@ -61,6 +61,7 @@
   .wallpaper-shade { z-index: -1; background: radial-gradient(120% 70% at 50% 30%, rgba(6, 14, 26, 0) 40%, rgba(6, 14, 26, .28) 100%), linear-gradient(180deg, rgba(6, 14, 26, .22) 0%, rgba(6, 14, 26, .04) 38%, rgba(6, 14, 26, .3) 100%); }
   :root[data-wallpaper="dusk"] .wallpaper, .wallpaper-swatch.dusk { background: radial-gradient(ellipse at 72% 90%, #d6a88a 0, transparent 60%), radial-gradient(ellipse at 15% 10%, #4d5f86 0, transparent 60%), linear-gradient(155deg, #4a5a78, #6f7aa0 42%, #9a90a8 72%, #d2ad8e); }
   :root[data-wallpaper="midnight"] .wallpaper, .wallpaper-swatch.midnight { background: radial-gradient(ellipse at 70% 95%, #26496a, transparent 62%), radial-gradient(ellipse at 10% 0%, #1d2b4a, transparent 55%), linear-gradient(160deg, #0c1422, #19283c 58%, #223452); }
+  :root[data-wallpaper="custom"] .wallpaper { background: #4a5f70 var(--custom-background, none) center center / cover no-repeat; }
 }
 @layer home {
   .home-screen { width: min(1016px, 100%); min-height: 100svh; margin: 0 auto; padding: clamp(96px, 16vh, 168px) 32px 128px; }
@@ -199,10 +200,13 @@
   .segmented button { flex: 1; border-radius: 9px; padding: 8px 5px; font-size: .8125rem; font-weight: 500; color: var(--muted); transition: color var(--motion-fast); }
   .segmented button[aria-pressed="true"] { color: var(--text); }
   .wallpaper-choices { border: 0; margin: 18px 0 0; padding: 0; }
-  .wallpaper-choices > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .wallpaper-choices > div { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
   .wallpaper-choices button { font-size: .6875rem; font-weight: 500; color: var(--muted); text-align: center; padding: 0; border-radius: 12px; }
   .wallpaper-swatch { display: block; height: 52px; border-radius: 12px; margin-bottom: 6px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14), 0 0 0 0 transparent; transition: box-shadow var(--motion-fast); }
   .wallpaper-swatch.mountain { background: #4a6478 url('/wallpaper.jpg') center / cover; }
+  /* Without an uploaded image, the custom tile is an add action. */
+  .wallpaper-swatch.custom { display: grid; place-items: center; color: var(--muted); background: var(--soft) var(--custom-background, none) center / cover; box-shadow: inset 0 0 0 1px var(--border-strong); }
+  :root:not([data-background=""]) .wallpaper-swatch.custom .icon { display: none; }
   .wallpaper-choices button:hover .wallpaper-swatch { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14), 0 0 0 2px var(--border-strong); }
   .wallpaper-choices button[aria-pressed="true"] .wallpaper-swatch { box-shadow: inset 0 0 0 2px var(--panel-edge), 0 0 0 2px var(--accent); }
   .wallpaper-choices button[aria-pressed="true"] { color: var(--text); }
@@ -242,6 +246,9 @@
   .icon-controls { min-width: 0; flex: 1; }
   .icon-actions { display: flex; gap: 7px; flex-wrap: wrap; }
   .icon-controls .field-hint { min-height: 18px; margin-top: 8px; }
+  .background-field { margin-top: 20px; }
+  .background-preview { position: relative; display: grid; place-items: center; aspect-ratio: 16 / 9; margin-bottom: 10px; overflow: hidden; border-radius: 14px; background: var(--soft); color: var(--muted); font-size: .75rem; }
+  .background-preview img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   details { color: var(--muted); font-size: .75rem; margin-top: 14px; }
   summary { cursor: pointer; padding: 4px 0; width: max-content; font-weight: 500; }
   summary:hover { color: var(--text); }

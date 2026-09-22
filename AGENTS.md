@@ -42,7 +42,8 @@ Harbor is a lightweight NAS start page. Preserve these constraints:
 - Never render service text as HTML or load service icons from remote URLs in
   the browser. Keep icons validated and stored locally.
 - Keep appearance preferences in browser storage and service/home selections
-  in the NAS store. Never imply that hiding a card restricts access.
+  and site identity (title, icon, custom background image) in the NAS store.
+  Never imply that hiding a card restricts access.
 - Maintain keyboard focus, accessible labels, touch access, responsive layouts,
   and reduced-motion support. See [DESIGN.md](DESIGN.md).
 

@@ -22,7 +22,8 @@ dependency.
 - Add, edit, delete, search, and choose which services appear on home.
 - Custom names, addresses, descriptions, and locally stored icons.
 - Website icon discovery, direct icon fetching, and image uploads.
-- System/Light/Dark panels, three backgrounds, and 12/24-hour time.
+- Custom page title, page icon, and background image.
+- System/Light/Dark panels, three built-in backgrounds, and 12/24-hour time.
 - Optional password protection for editing.
 - Single-file JSON persistence and Docker deployment.
 
@@ -70,7 +71,8 @@ Compose pulls `yexca/harbor:latest` from Docker Hub, with AMD64/ARM64 support.
 For a fixed release, change the image tag to `yexca/harbor:v0.1.0`.
 The container runs unprivileged with a read-only root filesystem and persistent
 `/data`, bind-mounted from `./data` beside the Compose file. Keep backups of
-`data/services.json`; `docker compose down`, including `-v`, preserves this directory.
+the `data` directory (`services.json`, plus `site.json` and a background image
+once customized); `docker compose down`, including `-v`, preserves it.
 
 See [Docker deployment](docs/operations/docker.md),
 [configuration](docs/operations/configuration.md), and

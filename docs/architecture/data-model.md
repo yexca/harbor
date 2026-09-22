@@ -1,7 +1,8 @@
 # Data Model
 
-The data directory contains one durable file, `services.json`. Its current
-schema version is `1`, independent of the application release in `VERSION`.
+The data directory contains `services.json` and, once the page is customized,
+`site.json` plus at most one `background-*` image. Each JSON schema version is
+currently `1`, independent of the application release in `VERSION`.
 
 ```json
 {
@@ -48,3 +49,30 @@ This is a single-process store, with no cross-process lock or shared-storage
 coordination. It is not a backup system or a guarantee against every filesystem
 or power-loss failure. Keep private backups as described in
 [data and reliability](../operations/data.md).
+
+## Site Settings
+
+`site.json` holds the page title, page icon, and custom background shared by
+every device. An absent file, empty title, or empty icon uses Harbor's defaults.
+
+```json
+{
+  "version": 1,
+  "title": "Home",
+  "icon": "",
+  "background": "background-0123456789abcdef01234567.jpg"
+}
+```
+
+| Field | Contract |
+| --- | --- |
+| `title` | Trimmed, at most 60 Unicode characters, no control characters; empty means `Harbor` |
+| `icon` | Empty for the built-in icon, otherwise the same validated data URI format as a service icon |
+| `background` | Empty, or a store-generated `background-<24 hex>.<jpg\|png\|gif\|webp>` file in the data directory |
+
+Backgrounds are validated by content and limited to 10 MiB and 16,384 pixels
+per side (WebP is checked by signature only). An upload writes a new file,
+switches `site.json` to it, and then removes the previous image, so a failure
+keeps the previous background. Invalid `site.json` fails startup without
+replacing the file; a referenced background that is missing is logged and
+treated as absent. Which background a device displays is a browser preference.
