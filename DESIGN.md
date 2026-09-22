@@ -18,10 +18,13 @@ current direction and constrain future UI changes.
 
 ## Panels and Actions
 
-- Right-click opens All apps. The bottom launcher, Settings, and `/` provide
-  alternate entry points; editable text retains its normal context menu.
+- Right-click opens All apps. The bottom launcher, Settings, Space, and `/`
+  provide alternate entry points; editable text retains its normal context menu.
+  Space keeps its native action on a focused link or button.
 - All apps contains the complete collection and a final add tile. Search narrows
-  the collection. Editing controls and home selection live here.
+  the collection; while it has focus, the first match is highlighted, arrow keys
+  move the highlight across the grid, and Enter opens it. Editing controls and
+  home selection live here.
 - Settings contains appearance, clock, background, management entry points,
   and editing access. Keep it near its top-right trigger on larger screens.
 - Add/edit forms use labeled fields, explicit save/cancel actions, an icon

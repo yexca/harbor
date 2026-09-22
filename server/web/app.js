@@ -1,7 +1,7 @@
 "use strict";
 
 const $ = (selector) => document.querySelector(selector);
-const state = { services: [], canEdit: false, protected: false, loaded: false, editing: null, icon: "", iconManual: false, iconRequest: 0, iconController: null, lastIconURL: "", saving: false, toastTimer: null, clockTimer: null, editorReturn: null, afterLogin: null, visibilityPending: new Set() };
+const state = { services: [], canEdit: false, protected: false, loaded: false, editing: null, icon: "", iconManual: false, iconRequest: 0, iconController: null, lastIconURL: "", saving: false, toastTimer: null, clockTimer: null, editorReturn: null, afterLogin: null, visibilityPending: new Set(), results: [], selectedId: null };
 
 function storageGet(key) { try { return localStorage.getItem(key); } catch { return null; } }
 function storageSet(key, value) { try { localStorage.setItem(key, value); } catch { /* Preferences are optional when browser storage is disabled. */ } }
@@ -188,6 +188,9 @@ function renderLibrary() {
   const filtered = state.services.filter((item) => `${item.name} ${item.description} ${item.url}`.toLowerCase().includes(query));
   const grid = $("#service-grid");
   renderCards(grid, filtered);
+  state.results = filtered;
+  if (!filtered.some((item) => item.id === state.selectedId)) state.selectedId = filtered[0]?.id ?? null;
+  markSelected();
   $("#service-count").textContent = state.services.length;
   $("#library-empty").hidden = !state.loaded || state.services.length > 0;
   $("#library-hint").textContent = state.canEdit ? "Choose which apps appear on your home screen." : "Unlock editing in Settings to organize your apps.";
@@ -205,6 +208,30 @@ function renderLibrary() {
     add.addEventListener("click", () => openEditor());
     grid.append(add);
   }
+}
+
+// Enter in the search box opens the selected match; arrow keys move the selection.
+function markSelected(scroll = false) {
+  const grid = $("#service-grid");
+  const selected = state.selectedId ? cardViews.get(grid)?.get(state.selectedId)?.element : null;
+  for (const card of grid.querySelectorAll(".library-card.is-selected")) if (card !== selected) card.classList.remove("is-selected");
+  selected?.classList.add("is-selected");
+  if (scroll) selected?.scrollIntoView({ block: "nearest" });
+  const item = state.results.find((result) => result.id === state.selectedId);
+  $("#search-hint").textContent = item ? `Press Enter to open ${item.name}.` : "";
+}
+
+function moveSelection(key) {
+  const count = state.results.length;
+  const index = state.results.findIndex((item) => item.id === state.selectedId);
+  if (!count || index < 0) return;
+  const columns = getComputedStyle($("#service-grid")).gridTemplateColumns.split(" ").length;
+  let next = index + { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -columns, ArrowDown: columns }[key];
+  // Moving down from a row above a partial last row lands on the last match.
+  if (key === "ArrowDown" && next >= count && Math.floor(index / columns) < Math.floor((count - 1) / columns)) next = count - 1;
+  if (next < 0 || next >= count) return;
+  state.selectedId = state.results[next].id;
+  markSelected(true);
 }
 
 function render() {
@@ -228,6 +255,7 @@ function openLibrary(focusSearch = false) {
   }
   closeNavigationPanels();
   $("#search").value = "";
+  state.selectedId = null;
   renderLibrary();
   $("#apps-dialog").showModal();
   if (focusSearch) $("#search").focus();
@@ -389,8 +417,23 @@ $("#open-apps").addEventListener("click", () => openLibrary());
 $("#manage-apps").addEventListener("click", () => openLibrary());
 $("#settings-dialog").addEventListener("close", () => $("#settings-button").setAttribute("aria-expanded", "false"));
 $("#retry-button").addEventListener("click", load);
-$("#search").addEventListener("input", renderLibrary);
-$("#clear-search").addEventListener("click", () => { $("#search").value = ""; renderLibrary(); $("#search").focus(); });
+$("#search").addEventListener("input", () => { state.selectedId = null; renderLibrary(); });
+$("#search").addEventListener("keydown", (event) => {
+  if (event.isComposing || event.keyCode === 229) return;
+  if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key) && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
+    if (!state.results.length) return;
+    event.preventDefault();
+    moveSelection(event.key);
+    return;
+  }
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  const link = $("#service-grid .library-card.is-selected .card-link");
+  if (!link) return;
+  link.click();
+  $("#apps-dialog").close();
+});
+$("#clear-search").addEventListener("click", () => { $("#search").value = ""; state.selectedId = null; renderLibrary(); $("#search").focus(); });
 $("#service-name").addEventListener("input", updatePreview);
 $("#service-url").addEventListener("blur", () => fetchIcon(false, true));
 $("#service-url").addEventListener("input", () => { if (state.iconController) { cancelIconRequest(); state.lastIconURL = ""; $("#icon-status").textContent = "Address changed. Leave the field to fetch its icon."; } });
@@ -532,7 +575,12 @@ document.addEventListener("contextmenu", (event) => {
   openLibrary();
 });
 document.addEventListener("keydown", (event) => {
-  if (event.key === "/" && !event.ctrlKey && !event.metaKey && !event.altKey && !document.querySelector("dialog[open]") && !["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) {
+  if (event.ctrlKey || event.metaKey || event.altKey || event.repeat || document.querySelector("dialog[open]")) return;
+  const active = document.activeElement;
+  if (["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName) || active.isContentEditable) return;
+  // Space keeps its native action on focused controls; "/" works from anywhere.
+  const space = event.key === " " && !event.shiftKey && !active.closest("a, button, summary");
+  if (event.key === "/" || space) {
     event.preventDefault();
     openLibrary(true);
   }

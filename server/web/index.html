@@ -54,7 +54,7 @@
   <dialog id="apps-dialog" class="apps-dialog" aria-labelledby="apps-title">
     <div class="dialog-header"><div class="panel-title"><h2 id="apps-title">All apps</h2><span id="service-count" class="count-badge">0</span></div><button class="icon-button" type="button" data-close="apps-dialog" aria-label="Close all apps"><svg class="icon"><use href="#i-close"/></svg></button></div>
     <div class="apps-body">
-      <label class="search-box"><svg class="icon"><use href="#i-search"/></svg><input id="search" type="search" placeholder="Find an app" aria-label="Find an app" autocomplete="off"><kbd>Esc</kbd></label>
+      <label class="search-box"><svg class="icon"><use href="#i-search"/></svg><input id="search" type="search" placeholder="Find an app" aria-label="Find an app" aria-describedby="search-hint" autocomplete="off" enterkeyhint="go"><kbd>Esc</kbd></label><span id="search-hint" class="sr-only" aria-live="polite"></span>
       <p id="library-empty" class="library-empty" hidden>Your collection starts here.</p>
       <div id="service-grid" class="library-grid"></div>
       <div id="no-results" class="no-results" hidden><p>No matching apps.</p><button id="clear-search" class="text-button" type="button">Clear search</button></div>
@@ -76,7 +76,7 @@
         <label class="settings-toggle"><span>24-hour clock</span><input id="clock-format" class="switch" type="checkbox" checked></label>
       </section>
       <button id="access-button" class="button button-secondary access-button" type="button" hidden><svg class="icon"><use href="#i-lock"/></svg><span>Unlock editing</span></button>
-      <p class="settings-note">Right-click the page or press <kbd>/</kbd> for all apps. Background and appearance are saved on this device.</p>
+      <p class="settings-note">Right-click the page or press <kbd>Space</kbd> or <kbd>/</kbd> for all apps, then use the arrow keys and <kbd>Enter</kbd> to open a match. Background and appearance are saved on this device.</p>
     </div>
   </dialog>
 

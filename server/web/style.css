@@ -147,6 +147,8 @@
   .library-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
   .library-card { min-width: 0; display: flex; flex-direction: column; border: 1px solid var(--border); background: var(--surface); border-radius: 16px; overflow: hidden; transition: background var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast); }
   .library-card:hover { background: var(--surface-hover); border-color: var(--border-strong); box-shadow: var(--shadow-soft); }
+  /* The first match is what Enter opens while the search box has focus. */
+  .apps-dialog:has(#search:focus) .library-card.is-selected { border-color: var(--accent); box-shadow: var(--focus); background: var(--surface-hover); }
   .library-card .card-link { flex: 1; display: flex; flex-direction: column; align-items: flex-start; min-height: 128px; padding: 16px 16px 12px; border-radius: 16px; }
   .library-card .card-link:focus-visible { outline-offset: -2px; }
   .library-card .service-icon { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28), inset 0 -1px 0 rgba(0, 0, 0, .08); }

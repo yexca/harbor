@@ -15,12 +15,16 @@ name and address, optionally add a description and icon, then save.
 Home shows services with **Show on home** enabled. Select a card to open its
 configured address in a new tab.
 
-Right-click the background or a home card to open All apps. Press `/`, use
-**Settings → All apps**, or tap the bottom **All apps** launcher for equivalent
-access. Text fields retain their normal context menu. Shift-right-click preserves
-the browser context menu where the browser supports it.
+Right-click the background or a home card to open All apps. Press Space or
+`/`, use **Settings → All apps**, or tap the bottom **All apps** launcher for
+equivalent access. Text fields retain their normal context menu.
+Shift-right-click preserves the browser context menu where the browser supports
+it.
 
 All apps shows every saved service. Search by name, description, or address.
+Keyboard shortcuts focus the search box. The first match is highlighted; use
+the arrow keys to move the highlight and press Enter to open it in a new tab.
+Shift with an arrow key still selects text in the search box.
 The final plus tile adds a service. Use a card's pencil button to edit it, and
 **On home / Show on home** to toggle home visibility. The editor also contains
 the visibility checkbox and delete action.

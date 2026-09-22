@@ -7,3 +7,5 @@
 - Show initials on vivid gradient tiles, using one letter for single-word names.
 - Reveal a small open arrow on home cards on hover or keyboard focus.
 - Refine the All apps tiles, Settings groups, form fields, switches, and toast.
+- Press Space to open All apps with the search box focused. The first match is
+  highlighted; arrow keys move the highlight and Enter opens it.

@@ -16,7 +16,7 @@ Harbor is a lightweight NAS start page. Preserve these constraints:
 - English UI, errors, code comments, and documentation. No i18n layer yet.
 - A wallpaper, clock/date, and home service cards are the primary screen.
 - Settings stays in the top-right corner. Management belongs in panels.
-- All apps opens through right-click, the bottom launcher, Settings, or `/`.
+- All apps opens through right-click, the bottom launcher, Settings, Space, or `/`.
   Keep the final add tile and an accessible touch/keyboard alternative.
 - Each service has one HTTP(S) address. Home visibility is presentation only;
   hidden services remain in All apps and the public API.
