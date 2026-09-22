@@ -81,7 +81,7 @@ function svg(name, className = "icon") {
 
 function initials(name) {
   const words = name.trim().split(/\s+/).filter(Boolean);
-  return (words.length > 1 ? [...words[0]][0] + [...words[1]][0] : [...(words[0] || "H")].slice(0, 2).join("")).toUpperCase();
+  return (words.length > 1 ? [...words[0]][0] + [...words[1]][0] : [...(words[0] || "H")][0]).toUpperCase();
 }
 
 function setIcon(element, name, icon) {
@@ -127,6 +127,7 @@ function serviceCard(item, home = false) {
   description.title = item.description || item.url;
   copy.append(name, description);
   link.append(icon, copy);
+  if (home) link.append(svg("arrow", "icon card-arrow"));
   article.append(link);
   if (!home && state.canEdit) {
     const actions = document.createElement("div");
